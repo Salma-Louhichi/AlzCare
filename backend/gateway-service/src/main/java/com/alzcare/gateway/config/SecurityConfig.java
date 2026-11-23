@@ -60,8 +60,6 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(PUBLIC_PATHS).permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/care-team/invitations/*/validate").permitAll()
-                        // Identity → care-team doctor–patient provisioning (no JWT; same as care-team permitAll on 8008)
-                        .pathMatchers(HttpMethod.POST, "/api/v1/care-team/doctors/*/patients/create").permitAll()
                         .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/v1/schedules/**").hasRole("ADMIN")
                         .pathMatchers("/api/v1/doctor/**").hasAnyRole("DOCTOR", "ADMIN")

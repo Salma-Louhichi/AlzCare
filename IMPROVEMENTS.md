@@ -15,7 +15,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 
 | ID | Priority | Area | Item | Status |
 |----|----------|------|------|--------|
-| SEC-1 | P0 | Backend | Unauthenticated endpoint lets anyone assign a patient to any doctor | ⏳ Planned |
+| SEC-1 | P0 | Backend | Unauthenticated endpoint lets anyone assign a patient to any doctor | ✅ Done |
 | SEC-2 | P0 | Backend | Services bypass the gateway: identity/notification have no auth and their ports are published | ⏳ Planned |
 | SEC-3 | P0 | Repo | Real third-party secrets were in source (Cloudinary secret, TomTom key) | ✅ Removed · ⚠️ rotate keys |
 | SEC-4 | P0 | Frontend | Login silently falls back to hard-coded mock users when the backend is unreachable | ⏳ Planned |
@@ -60,12 +60,19 @@ That doctor then gets access to the patient's data through the doctor endpoints.
 **Why it exists.** identity-service calls this endpoint server-to-server during
 "doctor creates patient" and did not forward any credentials, so the path was opened up.
 
-**Fix.**
+**Fix (done).**
 1. identity-service forwards the doctor's `Authorization` header to care-team.
 2. The `permitAll()` rule is removed from both the gateway and care-team, so the path requires a
    JWT with role DOCTOR or ADMIN.
 3. care-team checks that a DOCTOR can only create assignments for themselves
    (`jwt.sub == doctorId`); ADMIN may assign for any doctor.
+4. If care-team rejects the assignment or can't be reached, identity-service deletes the Keycloak
+   account it just created, so no orphan accounts are left behind.
+
+Side effect: the follow-up `PUT /api/v1/care-team/patients/{id}` (care-profile upsert) was also
+sent without a token. It had been failing on every call, logged only as a warning. It now works.
+Regression tests: `DoctorAssignmentControllerSecurityTest` (anonymous → 401, other doctor → 403,
+patient → 403, self → 200, admin → 200).
 
 ### SEC-2 · Services can be called directly, bypassing the gateway
 
