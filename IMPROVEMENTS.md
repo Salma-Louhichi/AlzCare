@@ -26,7 +26,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-9 | P2 | Frontend | OAuth2 password grant + tokens in `localStorage` | ⏳ Planned |
 | BLD-1 | P0 | Backend | Services don't compile on current JDKs (Lombok / annotation processing) | ✅ Done |
 | BLD-2 | P0 | Backend | Test suites don't compile (stale tests) | ✅ Done |
-| BLD-3 | P1 | Repo | No continuous integration | ⏳ Planned |
+| BLD-3 | P1 | Repo | No continuous integration | ✅ Done |
 | BLD-4 | P1 | Backend | Spring Boot 3.2 / Spring Cloud 2023.0.0 are end-of-life | ⏳ Planned |
 | BLD-5 | P2 | Backend | No aggregator POM; versions duplicated across 6 POMs | ⏳ Planned |
 | FE-1 | P1 | Frontend | Services duplicate the auth interceptor and read the token themselves | ✅ Done |
@@ -198,8 +198,13 @@ Result: identity 30/30 and notification 11/11 web/unit tests pass. Repository an
 tests use Testcontainers and run in CI, where Docker is available.
 
 ### BLD-3 · No CI
-**Fix:** `.github/workflows/ci.yml` runs on every push and pull request. It builds and
-tests each backend service (JDK 17, Maven cache) and builds the frontend.
+**Fix (done):** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests:
+- one matrix job per backend service: `mvn verify` on Temurin 17 with Maven caching. Surefire
+  reports are uploaded when a job fails. Docker on the runner lets the Testcontainers tests run.
+- a frontend job: `npm ci` and a production `ng build`.
+**Note:** the Testcontainers suites (identity repositories/integration, notification
+integration/RabbitMQ) could not be run during this review because there was no local Docker.
+The first CI run is their first real run in a long time, so expect fixes there.
 
 ### BLD-4 · End-of-life framework versions
 Spring Boot 3.2.x left OSS support in Nov 2024, and Spring Cloud 2023.0.0 is the first, unpatched
