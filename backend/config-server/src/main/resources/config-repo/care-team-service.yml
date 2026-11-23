@@ -1,0 +1,162 @@
+# Care Team Service Configuration
+
+server:
+  port: 8008
+
+# JWT (must match Keycloak token iss + JWKS reachable from this service)
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/alzcare
+          jwk-set-uri: http://localhost:8090/realms/alzcare/protocol/openid-connect/certs
+
+  datasource:
+    url: jdbc:mysql://localhost:3307/care_team_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.alzcare.careteam: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management / Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  info:
+    env:
+      enabled: true
+
+# OpenAPI / Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  info:
+    title: Care Team Service API
+    description: Care team management and patient assignments
+    version: 1.0.0
+
+# TomTom API Configuration
+tomtom:
+  api-key: ${TOMTOM_API_KEY:}
+
+# Inter-service: notify doctor when checklist item completed (Sprint 1 — communication microservices)
+alzcare:
+  notifications:
+    enabled: true
+    base-url: http://localhost:8004
+  invite:
+    frontend-base-url: http://localhost:4200
+  integrations:
+    airvisual:
+      api-key: ${AIRVISUAL_API_KEY:}
+    newsapi:
+      api-key: ${NEWS_API_KEY:}
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: care-team-service
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+---
+# Docker Profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/alzcare
+          jwk-set-uri: http://keycloak:8080/realms/alzcare/protocol/openid-connect/certs
+  datasource:
+    url: jdbc:mysql://mysql-careteam:3306/care_team_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+  cloud:
+    config:
+      enabled: true
+      uri: http://config-server:8888
+      fail-fast: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: care-team-service
+
+logging:
+  level:
+    root: INFO
+    com.alzcare.careteam: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+
+# TomTom API Configuration
+tomtom:
+  api-key: ${TOMTOM_API_KEY:}
+
+alzcare:
+  notifications:
+    enabled: true
+    base-url: http://notification-service:8004
+  invite:
+    frontend-base-url: http://localhost:4200
+  integrations:
+    airvisual:
+      api-key: ${AIRVISUAL_API_KEY:}
+    newsapi:
+      api-key: ${NEWS_API_KEY:}
