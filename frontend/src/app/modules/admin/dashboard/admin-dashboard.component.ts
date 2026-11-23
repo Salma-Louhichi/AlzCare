@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { ToastService } from '../../../shared/components/toast';
 import { AuthService } from '../../../core/services/auth.service';
 import { StatCardComponent } from '../../../shared/components/stat-card.component';
 import { AlertCardComponent } from '../../../shared/components/alert-card.component';
@@ -158,7 +159,11 @@ export class AdminDashboardComponent implements OnInit {
     { name: 'Notification Service', status: 'operational', uptime: '99.99%' }
   ];
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     const currentUser = this.authService.getCurrentUser();
@@ -213,27 +218,27 @@ export class AdminDashboardComponent implements OnInit {
 
   // Quick Action Handlers
   addPatient(): void {
-    console.log('Add Patient clicked');
+    this.router.navigate(['/admin/users']);
   }
 
   scheduleAppointment(): void {
-    console.log('Schedule Appointment clicked');
+    this.toast.info('Appointment scheduling is not available yet.');
   }
 
   sendBroadcast(): void {
-    console.log('Send Broadcast clicked');
+    this.router.navigate(['/admin/schedules/new']);
   }
 
   openSettings(): void {
-    console.log('Open Settings clicked');
+    this.router.navigate(['/admin/settings']);
   }
 
   generateReport(): void {
-    console.log('Generate Report clicked');
+    this.toast.info('Report generation is not available yet.');
   }
 
   manageUsers(): void {
-    console.log('Manage Users clicked');
+    this.router.navigate(['/admin/users']);
   }
 
   onQuickAction(action: QuickAction): void {

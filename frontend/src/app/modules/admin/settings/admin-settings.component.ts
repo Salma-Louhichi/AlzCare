@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ToastService } from '../../../shared/components/toast';
 
 interface SettingSection {
   id: string;
@@ -89,7 +90,7 @@ export class AdminSettingsComponent implements OnInit {
     uptime: '45 days, 12 hours'
   };
 
-  constructor() {}
+  constructor(private toast: ToastService) {}
 
   ngOnInit(): void {}
 
@@ -98,22 +99,22 @@ export class AdminSettingsComponent implements OnInit {
   }
 
   saveSettings(): void {
-    console.log('Settings saved');
+    this.toast.info('Saving settings is not available yet.');
   }
 
   testIntegration(integrationId: string): void {
-    console.log('Testing integration:', integrationId);
+    this.toast.info(`Testing the ${integrationId} integration is not available yet.`);
   }
 
   connectIntegration(integrationId: string): void {
-    console.log('Connecting integration:', integrationId);
+    this.toast.info(`Connecting the ${integrationId} integration is not available yet.`);
   }
 
   runBackup(): void {
-    console.log('Running backup...');
+    this.toast.info('Backups are not available yet.');
   }
 
   restoreBackup(): void {
-    console.log('Restore backup clicked');
+    this.toast.info('Restoring backups is not available yet.');
   }
 }
