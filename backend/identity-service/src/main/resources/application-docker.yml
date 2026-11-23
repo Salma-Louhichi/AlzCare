@@ -1,0 +1,23 @@
+# =============================================================================
+# Docker Profile - Bootstrap Configuration Only
+# This file should only contain bootstrap config to connect to Config Server.
+# All actual configuration comes from: config-server/config-repo/identity-service.yml
+# =============================================================================
+
+server:
+  port: 8001
+
+spring:
+  application:
+    name: identity-service
+  config:
+    import: "optional:configserver:http://config-server:8888"
+
+# Logging (local only - not from config server)
+logging:
+  level:
+    root: INFO
+    com.alzcare.identity: DEBUG
+    org.springframework.cloud.config: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
