@@ -22,7 +22,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-5 | P0 | Frontend | Route guard checks only "logged in", not the user's role | ⏳ Planned |
 | SEC-6 | P1 | Backend | Infrastructure credentials hard-coded in docker-compose | ✅ Done |
 | SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ✅ Done |
-| SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ⏳ Planned |
+| SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ✅ Strength · ⏳ temporary (needs SEC-9) |
 | SEC-9 | P2 | Frontend | OAuth2 password grant + tokens in `localStorage` | ⏳ Planned |
 | BLD-1 | P0 | Backend | Services don't compile on current JDKs (Lombok / annotation processing) | ✅ Done |
 | BLD-2 | P0 | Backend | Test suites don't compile (stale tests) | ✅ Done |
@@ -156,9 +156,13 @@ supported through `setAllowedOriginPatterns`. **Fix (done):** the gateway uses
 
 ### SEC-8 · Weak generated passwords
 `DoctorPatientProvisioningService.generatePatientPassword()` returns `"Patient1!" + 8 hex chars`
-taken from a UUID, and the password is permanent. **Fix:** the password is now 16
-characters from `SecureRandom` and is created as a temporary password, so Keycloak forces a
-change at first login.
+taken from a UUID, and the password is permanent.
+**Fix (done):** `PasswordGenerator` produces 16 characters from `SecureRandom` that always meet
+the realm policy (upper, lower, digit, symbol) and avoid look-alike characters. It is covered by
+`PasswordGeneratorTest`.
+**Deferred:** marking the password *temporary* (forcing a change at first login) would currently
+lock patients out. Keycloak rejects the password grant the SPA uses while a required action is
+pending, and the app has no change-password screen. This ships together with SEC-9.
 
 ### BLD-1 · Build broken on current JDKs
 Spring Boot 3.2 pins Lombok 1.18.30, which can't process annotations on JDK 21+. JDK 23 also

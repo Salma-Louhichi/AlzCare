@@ -3,6 +3,7 @@ package com.alzcare.identity.services;
 import com.alzcare.identity.dtos.requests.DoctorCreatePatientRequest;
 import com.alzcare.identity.dtos.requests.UserCreateRequest;
 import com.alzcare.identity.dtos.responses.DoctorCreatesPatientResponse;
+import com.alzcare.identity.utils.PasswordGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +20,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * PDF workflow: POST /doctors/{doctorId}/patients/create — create patient user + profile + doctor assignment.
@@ -145,8 +145,11 @@ public class DoctorPatientProvisioningService {
         }
     }
 
+    /**
+     * Previously "Patient1!" + 8 hex characters of a UUID: a fixed, guessable prefix and only
+     * 32 random bits. Now 16 characters from SecureRandom covering the realm password policy.
+     */
     private static String generatePatientPassword() {
-        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        return "Patient1!" + suffix;
+        return PasswordGenerator.generate();
     }
 }
