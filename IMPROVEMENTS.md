@@ -24,7 +24,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ⏳ Planned |
 | SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ⏳ Planned |
 | SEC-9 | P2 | Frontend | OAuth2 password grant + tokens in `localStorage` | ⏳ Planned |
-| BLD-1 | P0 | Backend | Services don't compile on current JDKs (Lombok / annotation processing) | ⏳ Planned |
+| BLD-1 | P0 | Backend | Services don't compile on current JDKs (Lombok / annotation processing) | ✅ Done |
 | BLD-2 | P0 | Backend | Test suites don't compile (stale tests) | ⏳ Planned |
 | BLD-3 | P1 | Repo | No continuous integration | ⏳ Planned |
 | BLD-4 | P1 | Backend | Spring Boot 3.2 / Spring Cloud 2023.0.0 are end-of-life | ⏳ Planned |
