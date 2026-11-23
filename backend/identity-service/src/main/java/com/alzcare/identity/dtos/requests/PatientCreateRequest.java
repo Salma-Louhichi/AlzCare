@@ -1,0 +1,68 @@
+package com.alzcare.identity.dtos.requests;
+
+import com.alzcare.identity.enums.GenderEnum;
+import com.alzcare.identity.enums.LanguageEnum;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+/**
+ * Request DTO for creating a new patient profile.
+ * Linked to Keycloak for authentication.
+ */
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PatientCreateRequest {
+
+    @NotNull(message = "User ID is required")
+    private UUID userId;
+
+    @NotBlank(message = "First name is required")
+    @Size(max = 100, message = "First name must not exceed 100 characters")
+    private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    @Size(max = 100, message = "Last name must not exceed 100 characters")
+    private String lastName;
+
+    @NotNull(message = "Date of birth is required")
+    private LocalDate dateOfBirth;
+
+    @NotNull(message = "Gender is required")
+    private GenderEnum gender;
+
+    private LanguageEnum preferredLanguage;
+
+    @Size(max = 500, message = "Photo URL must not exceed 500 characters")
+    private String photoUrl;
+
+    @Size(max = 50, message = "Phone must not exceed 50 characters")
+    private String phone;
+
+    @Size(max = 255, message = "Emergency contact must not exceed 255 characters")
+    private String emergencyContact;
+
+    @Size(max = 1000, message = "Address must not exceed 1000 characters")
+    private String address;
+
+    private UUID createdBy;
+
+    private Integer totalPoints;
+
+    private Integer currentStreak;
+
+    private LocalDate lastPlayedDate;
+
+    private Boolean assistedModeActive;
+}
