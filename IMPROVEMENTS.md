@@ -30,7 +30,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | BLD-4 | P1 | Backend | Spring Boot 3.2 / Spring Cloud 2023.0.0 are end-of-life | ⏳ Planned |
 | BLD-5 | P2 | Backend | No aggregator POM; versions duplicated across 6 POMs | ⏳ Planned |
 | FE-1 | P1 | Frontend | Services duplicate the auth interceptor and read the token themselves | ✅ Done |
-| FE-2 | P1 | Frontend | Debug `console.log` statements in production code | ⏳ Planned |
+| FE-2 | P1 | Frontend | Debug `console.log` statements in production code | ✅ Done |
 | FE-3 | P1 | Frontend | Zero unit tests | ⏳ Planned |
 | FE-4 | P2 | Frontend | Very large components (900+ lines) | ⏳ Planned |
 | FE-5 | P2 | Frontend | `any` types and mock `DataService` still used by screens | ⏳ Planned |
@@ -221,8 +221,11 @@ backend maps that path with `@PutMapping`, so the request could never succeed. I
 There are 35 runtime `console.log` calls in `src/`. Several of them print user ids and names
 (behavior list and detail modal, camera devices). Eleven admin dashboard and settings buttons
 only call a handler that logs "… clicked", so they look interactive but do nothing.
-**Fix:** remove the debug logging (`console.error` stays for real errors), and show an explicit
-"not available yet" toast from the placeholder buttons until they are implemented.
+**Fix (done):** the 24 debug `console.log` calls were removed (`console.warn`/`console.error` stay
+for real problems). Dashboard quick actions now go to the existing page where there is one
+(Add patient / Manage users → `/admin/users`, Send broadcast → `/admin/schedules/new`,
+Settings → `/admin/settings`). The rest (appointments, reports, settings save, integrations,
+backups) show an honest "not available yet" toast instead of failing silently.
 
 ### FE-3 · No frontend tests
 The project has zero `*.spec.ts` files and no test runner configured, although `npm test`

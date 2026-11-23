@@ -541,20 +541,16 @@ export class BehaviorsPageComponent implements OnInit, OnDestroy {
       return;
     }
     
-    console.log('[BehaviorsPage] Loading reporter name for:', userId);
     
     // Try caregiver first
     this.apiService.getCaregiverByUserId(userId).subscribe({
       next: (caregiver: CaregiverProfile) => {
-        console.log('[BehaviorsPage] Found caregiver:', caregiver.firstName, caregiver.lastName);
         this.reporterName = `${caregiver.firstName} ${caregiver.lastName}`;
       },
       error: (err) => {
-        console.log('[BehaviorsPage] Caregiver not found, trying doctor...', err?.status);
         // Fallback to doctor
         this.apiService.getDoctorByUserId(userId).subscribe({
           next: (doctor: DoctorProfile) => {
-            console.log('[BehaviorsPage] Found doctor:', doctor.firstName, doctor.lastName);
             this.reporterName = `${doctor.firstName} ${doctor.lastName}`;
           },
           error: (err2) => {

@@ -73,10 +73,7 @@ export class AdminCameraDevicesComponent implements OnInit, OnDestroy {
       const user = this.authService.getCurrentUser();
       if (user) {
         userId = user.id;
-        console.log('Using user.id from currentUser:', userId);
       }
-    } else {
-      console.log('Using UUID from token sub:', userId);
     }
     
     if (userId) {

@@ -57,20 +57,16 @@ export class BehaviorLogListComponent implements OnInit, OnChanges {
   ) {}
   
   ngOnInit(): void {
-    console.log('[BehaviorLogList] ngOnInit - patientId:', this.patientId);
     this.loadBehaviorLogs();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('[BehaviorLogList] ngOnChanges:', changes);
     if (changes['patientId'] && !changes['patientId'].firstChange) {
-      console.log('[BehaviorLogList] patientId changed, reloading...');
       this.loadBehaviorLogs();
     }
   }
   
   loadBehaviorLogs(): void {
-    console.log('[BehaviorLogList] loadBehaviorLogs called for patient:', this.patientId);
     if (!this.patientId) {
       console.warn('[BehaviorLogList] No patientId provided!');
       return;
@@ -78,7 +74,6 @@ export class BehaviorLogListComponent implements OnInit, OnChanges {
     this.isLoading = true;
     this.safetyService.getBehaviorLogsByPatient(this.patientId).subscribe({
       next: (logs) => {
-        console.log('[BehaviorLogList] Loaded', logs.length, 'logs');
         this.behaviorLogs = logs.sort((a, b) => 
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
@@ -97,16 +92,13 @@ export class BehaviorLogListComponent implements OnInit, OnChanges {
    * Tries caregiver first, then falls back to doctor
    */
   loadReporterNames(logs: BehaviorLogResponse[]): void {
-    console.log('[BehaviorLogList] loadReporterNames called with', logs.length, 'logs');
     const uniqueReporterIds = [...new Set(logs
       .filter(log => log.reportedBy)
       .map(log => log.reportedBy!)
     )];
     
-    console.log('[BehaviorLogList] Unique reporter IDs:', uniqueReporterIds);
     
     if (uniqueReporterIds.length === 0) {
-      console.log('[BehaviorLogList] No reporter IDs found in logs');
       return;
     }
 
@@ -114,15 +106,12 @@ export class BehaviorLogListComponent implements OnInit, OnChanges {
       // Try caregiver first
       this.apiService.getCaregiverByUserId(id).subscribe({
         next: (caregiver: CaregiverProfile) => {
-          console.log(`[BehaviorLogList] Found caregiver for ${id}:`, caregiver.firstName, caregiver.lastName);
           this.reporterNames.set(id, `${caregiver.firstName} ${caregiver.lastName}`);
         },
         error: (err) => {
-          console.log(`[BehaviorLogList] Caregiver not found for ${id}, trying doctor...`, err.status);
           // Fallback to doctor
           this.apiService.getDoctorByUserId(id).subscribe({
             next: (doctor: DoctorProfile) => {
-              console.log(`[BehaviorLogList] Found doctor for ${id}:`, doctor.firstName, doctor.lastName);
               this.reporterNames.set(id, `${doctor.firstName} ${doctor.lastName}`);
             },
             error: (err2) => {

@@ -336,7 +336,6 @@ export class BehaviorDetailModalComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     // Reload names when behavior input changes
     if (changes['behavior'] && !changes['behavior'].firstChange) {
-      console.log('[BehaviorDetailModal] Behavior changed, reloading names...');
       this.loadReporterName();
       this.loadValidatorName();
     }
@@ -369,20 +368,16 @@ export class BehaviorDetailModalComponent implements OnInit, OnChanges {
    * Helper to load user name from Identity Service
    */
   private loadUserName(userId: string, callback: (name: string) => void): void {
-    console.log(`[BehaviorDetailModal] Loading user name for ID: ${userId}`);
     
     // Try caregiver first
     this.apiService.getCaregiverByUserId(userId).subscribe({
       next: (caregiver: CaregiverProfile) => {
-        console.log(`[BehaviorDetailModal] Found caregiver: ${caregiver.firstName} ${caregiver.lastName}`);
         callback(`${caregiver.firstName} ${caregiver.lastName}`);
       },
       error: (err) => {
-        console.log(`[BehaviorDetailModal] Caregiver not found (status: ${err?.status}), trying doctor...`);
         // Fallback to doctor
         this.apiService.getDoctorByUserId(userId).subscribe({
           next: (doctor: DoctorProfile) => {
-            console.log(`[BehaviorDetailModal] Found doctor: ${doctor.firstName} ${doctor.lastName}`);
             callback(`${doctor.firstName} ${doctor.lastName}`);
           },
           error: (err2) => {

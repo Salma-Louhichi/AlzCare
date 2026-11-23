@@ -160,7 +160,6 @@ export class NotificationService {
       });
     });
 
-    console.log(`[NotificationService] Started polling for user ${userId} every ${intervalMs}ms`);
   }
 
   /**
@@ -170,7 +169,6 @@ export class NotificationService {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
       this.pollingSubscription = undefined;
-      console.log('[NotificationService] Stopped polling');
     }
   }
 
