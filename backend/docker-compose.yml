@@ -1,0 +1,788 @@
+# =============================================================================
+# AlzCare Platform - Docker Compose for Local Development
+# Infrastructure: Eureka, Config Server, RabbitMQ, Keycloak, MongoDB
+# Services: Identity Service, Gateway Service, Safety Alert Engine, Notification Service
+#
+# Default:  docker compose up -d
+#   Starts only services whose source exists in this repo (core stack + care-team).
+# Full stack (requires extra folders: safety-alert-engine, event-ingestion,
+#   community-social-service):  docker compose --profile full up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Eureka Server - Service Discovery
+  # ---------------------------------------------------------------------------
+  eureka-server:
+    container_name: eureka-server
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    image: alzcare/eureka:latest
+    environment:
+      EUREKA_HOSTNAME: eureka-server
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8761:8761"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # Config Server - Centralized Configuration
+  # ---------------------------------------------------------------------------
+  config-server:
+    container_name: config-server
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    image: alzcare/config:latest
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      CONFIG_SERVER_USERNAME: config
+      CONFIG_SERVER_PASSWORD: config123
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config-server/src/main/resources/config-repo:/config-repo:ro
+    networks:
+      - backend-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # RabbitMQ - Message Broker
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.12-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: alzcare
+      RABBITMQ_DEFAULT_PASS: alzcare123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"      # AMQP port
+      - "15672:15672"    # Management UI
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database for Identity Service
+  # ---------------------------------------------------------------------------
+  postgres-identity:
+    container_name: postgres-identity
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: alzcare_identity
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pg_identity:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d alzcare_identity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    command: >
+      postgres
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c maintenance_work_mem=64MB
+        -c wal_buffers=16MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c work_mem=8MB
+        -c min_wal_size=1GB
+        -c max_wal_size=4GB
+
+  # ---------------------------------------------------------------------------
+  # Identity Service
+  # ---------------------------------------------------------------------------
+  identity-service:
+    container_name: identity-service
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    image: alzcare/identity:latest
+    environment:
+      DB_HOST: postgres-identity
+      DB_PORT: 5432
+      DB_NAME: alzcare_identity
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8001:8001"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      postgres-identity:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database for Keycloak
+  # ---------------------------------------------------------------------------
+  postgres-keycloak:
+    container_name: postgres-keycloak
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak_password
+    volumes:
+      - pg_keycloak:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Keycloak - OAuth2/OIDC Identity Provider
+  # ---------------------------------------------------------------------------
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:22.0.5
+    command: 
+      - start-dev
+      - --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak_password
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8090
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak-service/realm-config:/opt/keycloak/data/import:ro
+    ports:
+      - "8090:8080"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/8080 && echo \"UP\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database for Safety Alert Engine
+  # ---------------------------------------------------------------------------
+  postgres-safety:
+    profiles: ["full"]
+    container_name: postgres-safety
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: postgres-safety
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pg_safety:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d postgres-safety"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    command: >
+      postgres
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c maintenance_work_mem=64MB
+        -c wal_buffers=16MB
+
+  # ---------------------------------------------------------------------------
+  # Safety Alert Engine Service
+  # ---------------------------------------------------------------------------
+  safety-alert-engine:
+    profiles: ["full"]
+    container_name: safety-alert-engine
+    build:
+      context: ./safety-alert-engine
+      dockerfile: Dockerfile
+    image: alzcare/safety:latest
+    environment:
+      DB_HOST: postgres-safety
+      DB_PORT: 5432
+      DB_NAME: postgres-safety
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8003:8003"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      postgres-safety:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # Gateway Service - Spring Cloud Gateway
+  # ---------------------------------------------------------------------------
+  gateway-service:
+    container_name: gateway-service
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    image: alzcare/gateway:latest
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/alzcare
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/alzcare/protocol/openid-connect/certs
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# -----------------------------------------------------------------------------
+# MongoDB Database for Notification Service
+# -----------------------------------------------------------------------------
+  mongo-notification:
+    container_name: mongo-notification
+    image: mongo:6
+    environment:
+      MONGO_INITDB_DATABASE: notifications
+    volumes:
+      - mongo_notif:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # -----------------------------------------------------------------------------
+  # MySQL Database for Care Team Service
+  # -----------------------------------------------------------------------------
+  mysql-careteam:
+    container_name: mysql-careteam
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: care_team_db
+    volumes:
+      - mysql_careteam:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # -----------------------------------------------------------------------------
+  # MySQL Database for Community Social Service
+  # -----------------------------------------------------------------------------
+  mysql-community:
+    profiles: ["full"]
+    container_name: mysql-community
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: community_db
+    volumes:
+      - mysql_community:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # -----------------------------------------------------------------------------
+  # Notification Service
+  # -----------------------------------------------------------------------------
+  notification-service:
+    container_name: notification-service
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: alzcare/notification:latest
+    environment:
+      MONGO_HOST: mongo-notification
+      MONGO_PORT: 27017
+      MONGO_DATABASE: notifications
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: alzcare
+      RABBITMQ_PASSWORD: alzcare123
+      SERVICES_IDENTITY_URL: http://identity-service:8001
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8004:8004"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      mongo-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# -----------------------------------------------------------------------------
+# PostgreSQL Database for Event Ingestion Service
+# -----------------------------------------------------------------------------
+  postgres-event:
+    profiles: ["full"]
+    container_name: postgres-event
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: postgres-event
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pg_event:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - backend-network
+      - database-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d postgres-event"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    command: >
+      postgres
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c maintenance_work_mem=64MB
+        -c wal_buffers=16MB
+
+# -----------------------------------------------------------------------------
+# Event Ingestion Service
+# -----------------------------------------------------------------------------
+  event-ingestion:
+    profiles: ["full"]
+    container_name: event-ingestion
+    build:
+      context: ./event-ingestion
+      dockerfile: Dockerfile
+    image: alzcare/event-ingestion:latest
+    environment:
+      DB_HOST: postgres-event
+      DB_PORT: 5432
+      DB_NAME: postgres-event
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres} 
+      SERVICES_SAFETY_ALERT_ENGINE_URL: http://safety-alert-engine:8003
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8002:8002"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      postgres-event:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # -----------------------------------------------------------------------------
+  # Care Team Service
+  # -----------------------------------------------------------------------------
+  care-team-service:
+    container_name: care-team-service
+    build:
+      context: ./care-team-service
+      dockerfile: Dockerfile
+    image: alzcare/care-team:latest
+    environment:
+      DB_HOST: mysql-careteam
+      DB_PORT: 3306
+      DB_NAME: care_team_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8008:8008"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      mysql-careteam:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8008/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# -----------------------------------------------------------------------------
+# Community Social Service
+# -----------------------------------------------------------------------------
+  community-social-service:
+    profiles: ["full"]
+    container_name: community-social-service
+    build:
+      context: ./community-social-service
+      dockerfile: Dockerfile
+    image: alzcare/community-social:latest
+    environment:
+      DB_HOST: mysql-community
+      DB_PORT: 3306
+      DB_NAME: community_db
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "8009:8009"
+    networks:
+      - backend-network
+      - database-network
+    depends_on:
+      mysql-community:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8009/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# -----------------------------------------------------------------------------
+# Named Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  mongo_notif:
+    driver: local
+  pg_identity:
+    driver: local
+  pg_keycloak:
+    driver: local
+  pg_safety:
+    driver: local
+  pg_event:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  mysql_careteam:
+    driver: local
+  mysql_community:
+    driver: local
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  backend-network:
+    driver: bridge
+    name: alzcare_backend-network
+  database-network:
+    driver: bridge
+    name: alzcare_database-network
