@@ -9,8 +9,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * PDF: public GET invite validate; internal doctor–patient provisioning from identity (no JWT);
- * all other care-team APIs require JWT (gateway forwards Authorization).
+ * Public: GET invite validation only. Every other care-team API requires a JWT
+ * (the gateway, and identity-service during patient provisioning, forward Authorization).
  */
 @Configuration
 @EnableWebSecurity
@@ -23,8 +23,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/care-team/invitations/*/validate")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/care-team/doctors/*/patients/create")
                         .permitAll()
                         .requestMatchers("/api/v1/care-team/**").authenticated()
                 )

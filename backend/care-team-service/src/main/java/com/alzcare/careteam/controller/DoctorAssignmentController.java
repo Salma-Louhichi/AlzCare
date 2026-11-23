@@ -4,7 +4,11 @@ import com.alzcare.careteam.entity.DoctorAssignment;
 import com.alzcare.careteam.entity.PatientCareProfile;
 import com.alzcare.careteam.service.DoctorAssignmentService;
 import com.alzcare.careteam.service.PatientCareProfileService;
+import com.alzcare.careteam.security.JwtRealmRoles;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,8 +33,19 @@ public class DoctorAssignmentController {
     @PostMapping("/doctors/{doctorId}/patients/create")
     public ResponseEntity<DoctorAssignment> createAssignment(
             @PathVariable String doctorId,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal Jwt jwt) {
+        // A doctor may only assign patients to themselves; admins may assign to any doctor.
+        List<String> roles = JwtRealmRoles.extract(jwt);
+        boolean isAdmin = roles.contains("ADMIN");
+        boolean isSelf = roles.contains("DOCTOR") && doctorId.equals(jwt.getSubject());
+        if (!isAdmin && !isSelf) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         String patientId = body.get("patientId");
+        if (patientId == null || patientId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.ok(service.createAssignment(doctorId, patientId));
     }
 
