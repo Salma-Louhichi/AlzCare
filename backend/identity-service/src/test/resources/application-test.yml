@@ -1,0 +1,48 @@
+# Test Configuration for Identity Service
+# Uses Testcontainers PostgreSQL for integration testing
+
+spring:
+  application:
+    name: identity-service
+
+  datasource:
+    url: jdbc:tc:postgresql:15-alpine:///alzcare_identity?TC_INITSCRIPT=db/migration/V1__initial_schema.sql
+    username: test
+    password: test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: false
+
+  sql:
+    init:
+      mode: never
+
+# Logging
+logging:
+  level:
+    root: WARN
+    com.alzcare.identity: DEBUG
+    org.springframework.test: INFO
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management / Actuator (disabled for tests)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
