@@ -1,0 +1,21 @@
+# =============================================================================
+# Default Profile - Bootstrap Configuration Only
+# All actual configuration comes from Config Server
+# =============================================================================
+
+server:
+  port: 8008
+
+spring:
+  application:
+    name: care-team-service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+---
+# Docker profile configuration
+spring:
+  config:
+    activate:
+      on-profile: docker
+    import: "optional:configserver:http://config-server:8888"
