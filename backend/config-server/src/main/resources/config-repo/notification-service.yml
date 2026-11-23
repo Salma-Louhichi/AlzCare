@@ -100,8 +100,8 @@ spring:
   rabbitmq:
     host: rabbitmq
     port: 5672
-    username: alzcare
-    password: alzcare123
+    username: ${RABBITMQ_USERNAME:alzcare}
+    password: ${RABBITMQ_PASSWORD:alzcare123}
 
 eureka:
   client:

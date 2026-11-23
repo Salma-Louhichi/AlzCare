@@ -73,8 +73,8 @@ keycloak:
   auth-server-url: http://localhost:8090
   realm: alzcare
   admin-client-id: admin-cli
-  admin-username: admin
-  admin-password: Admin123!
+  admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+  admin-password: ${KEYCLOAK_ADMIN_PASSWORD:Admin123!}
 
 # Care-team (PDF: doctor creates patient → identity calls this to create DoctorAssignment).
 # Use gateway (8080) locally so you only need care-team reachable via routes; docker profile uses care-team-service directly.
@@ -119,8 +119,8 @@ keycloak:
   auth-server-url: http://keycloak:8080
   realm: alzcare
   admin-client-id: admin-cli
-  admin-username: admin
-  admin-password: admin
+  admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+  admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
 
 alzcare:
   care-team:

@@ -22,7 +22,7 @@ services:
     environment:
       EUREKA_HOSTNAME: eureka-server
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -59,8 +59,8 @@ services:
     image: alzcare/config:latest
     environment:
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      CONFIG_SERVER_USERNAME: config
-      CONFIG_SERVER_PASSWORD: config123
+      CONFIG_SERVER_USERNAME: ${CONFIG_SERVER_USERNAME:-config}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD:-config123}
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -98,8 +98,8 @@ services:
     container_name: rabbitmq
     image: rabbitmq:3.12-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: alzcare
-      RABBITMQ_DEFAULT_PASS: alzcare123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-alzcare}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-alzcare123}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     ports:
@@ -174,11 +174,13 @@ services:
       DB_HOST: postgres-identity
       DB_PORT: 5432
       DB_NAME: alzcare_identity
+      KEYCLOAK_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -221,7 +223,7 @@ services:
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak_password
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_password}
     volumes:
       - pg_keycloak:/var/lib/postgresql/data
     ports:
@@ -250,7 +252,7 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
       KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak_password
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_password}
       KC_HOSTNAME: localhost
       KC_HOSTNAME_PORT: 8090
       KC_HOSTNAME_STRICT: "false"
@@ -259,8 +261,8 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       KC_FEATURES: token-exchange,admin-fine-grained-authz
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     volumes:
       - ./keycloak-service/realm-config:/opt/keycloak/data/import:ro
     ports:
@@ -332,7 +334,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -380,7 +382,7 @@ services:
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/alzcare
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/alzcare/protocol/openid-connect/certs
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -524,12 +526,12 @@ services:
       MONGO_DATABASE: notifications
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USERNAME: alzcare
-      RABBITMQ_PASSWORD: alzcare123
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-alzcare}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-alzcare123}
       SERVICES_IDENTITY_URL: http://identity-service:8001
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -617,7 +619,7 @@ services:
       SERVICES_SAFETY_ALERT_ENGINE_URL: http://safety-alert-engine:8003
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
@@ -668,7 +670,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-root}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
       JAVA_OPTS: >
         -XX:+UseContainerSupport
@@ -721,7 +723,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-root}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config:config123@config-server:8888"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
       JAVA_OPTS: >
         -XX:+UseContainerSupport
         -XX:MaxRAMPercentage=75.0
