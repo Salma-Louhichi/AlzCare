@@ -35,7 +35,16 @@ public class DoctorPatientProvisioningService {
     @Value("${alzcare.care-team.base-url:http://localhost:8080}")
     private String careTeamBaseUrl;
 
-    public DoctorCreatesPatientResponse provision(String doctorId, DoctorCreatePatientRequest req) {
+    /**
+     * @param authorization the caller's {@code Authorization} header. It is forwarded to
+     *                      care-team, which only lets a doctor create assignments for
+     *                      themselves (or an admin for anyone).
+     */
+    public DoctorCreatesPatientResponse provision(String doctorId, DoctorCreatePatientRequest req,
+                                                  String authorization) {
+        if (authorization == null || authorization.isBlank()) {
+            throw new IllegalArgumentException("Missing Authorization header");
+        }
         String password = req.getPassword();
         String generatedPassword = null;
         if (password == null || password.isBlank()) {
@@ -65,6 +74,7 @@ public class DoctorPatientProvisioningService {
                 + "/api/v1/care-team/doctors/" + doctorId + "/patients/create";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(HttpHeaders.AUTHORIZATION, authorization);
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(
                 Map.of("patientId", patientUserId),
                 headers
@@ -74,18 +84,21 @@ public class DoctorPatientProvisioningService {
             assignmentResponse = restTemplate.postForEntity(url, entity, Map.class);
         } catch (ResourceAccessException e) {
             log.error("Care-team unreachable at {}: {}", url, e.getMessage());
+            rollbackUser(patientUserId);
             throw new IllegalStateException(
                     "Care-team is unreachable at " + url
                             + ". Start care-team-service (and MySQL), ensure alzcare.care-team.base-url points to gateway (8080) or care-team (8008).",
                     e);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("Care-team assignment HTTP {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
+            rollbackUser(patientUserId);
             throw new IllegalStateException(
                     "Care-team rejected doctor assignment (" + e.getStatusCode() + "): "
                             + e.getResponseBodyAsString(),
                     e);
         } catch (RestClientException e) {
             log.error("Care-team call failed: {}", e.getMessage());
+            rollbackUser(patientUserId);
             throw new IllegalStateException("Care-team doctor assignment failed: " + e.getMessage(), e);
         }
         if (!assignmentResponse.getStatusCode().is2xxSuccessful() || assignmentResponse.getBody() == null) {
@@ -120,6 +133,16 @@ public class DoctorPatientProvisioningService {
                 .assignmentStatus(status)
                 .generatedPassword(generatedPassword)
                 .build();
+    }
+
+    /** Compensating action: don't leave an orphan Keycloak account when the assignment is rejected. */
+    private void rollbackUser(String patientUserId) {
+        try {
+            keycloakAdminService.deleteUser(patientUserId);
+            log.info("Rolled back Keycloak user {} after failed doctor assignment", patientUserId);
+        } catch (RuntimeException ex) {
+            log.error("Could not roll back Keycloak user {}: {}", patientUserId, ex.getMessage());
+        }
     }
 
     private static String generatePatientPassword() {
