@@ -1,0 +1,256 @@
+# Gateway Service Configuration
+
+spring:
+  cloud:
+    gateway:
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+              - "http://localhost:4201"
+              - "http://127.0.0.1:4200"
+              - "http://127.0.0.1:4201"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      # Route definitions
+      routes:
+        # Identity Service
+        - id: identity-service
+          uri: http://identity-service:8001
+          predicates:
+            - Path=/api/v1/patients/**,/api/v1/doctors/**,/api/v1/caregivers/**,/api/v1/admin/**
+          filters:
+            - StripPrefix=0
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+
+        # Event Ingestion Service
+        - id: event-ingestion
+          uri: lb://event-ingestion
+          predicates:
+            - Path=/api/cameras/**,/api/events/**,/api/patterns/**
+          filters:
+            - StripPrefix=0
+            - name: Retry
+              args:
+                retries: 3
+                statusCodes: BAD_GATEWAY,SERVICE_UNAVAILABLE
+
+        # Safety Alert Engine
+        - id: safety-alert-engine
+          uri: http://safety-alert-engine:8003
+          predicates:
+            - Path=/api/behavior-logs/**, /api/alerts/**
+          filters:
+            - StripPrefix=0
+
+        # Notification Service
+        - id: notification-service
+          uri: http://notification-service:8004
+          predicates:
+            - Path=/api/v1/notifications/**,/api/v1/notification-templates/**,/api/v1/schedules/**
+          filters:
+            - StripPrefix=0
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+
+        # Cognitive Memory Service (placeholder)
+        - id: cognitive-memory
+          uri: http://cognitive-memory:8005
+          predicates:
+            - Path=/api/v1/cognitive/**, /api/v1/games/**, /api/v1/memories/**
+          filters:
+            - StripPrefix=0
+
+        # Daily Care Service (placeholder)
+        - id: daily-care
+          uri: http://daily-care:8006
+          predicates:
+            - Path=/api/v1/daily-care/**, /api/v1/habits/**
+          filters:
+            - StripPrefix=0
+
+        # Medical Management Service (placeholder)
+        - id: medical-management
+          uri: http://medical-management:8007
+          predicates:
+            - Path=/api/v1/medical/**, /api/v1/appointments/**, /api/v1/medications/**
+          filters:
+            - StripPrefix=0
+
+        # Care Team Service
+        - id: care-team-service
+          uri: http://care-team-service:8008
+          predicates:
+            - Path=/api/v1/care-team/**
+          filters:
+            - StripPrefix=0
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+
+        # Community Social Service - Route for /api/community/**
+        - id: community-social-service
+          uri: lb://community-social-service
+          predicates:
+            - Path=/api/community/**
+          filters:
+            - StripPrefix=2
+
+        # ML Prediction Service (placeholder)
+        - id: ml-prediction
+          uri: http://ml-prediction:8094
+          predicates:
+            - Path=/api/v1/ml/**
+          filters:
+            - StripPrefix=0
+
+        # Keycloak (proxy to Keycloak for OAuth flows)
+        - id: keycloak
+          uri: http://keycloak:8080
+          predicates:
+            - Path=/realms/**, /resources/**
+          filters:
+            - StripPrefix=0
+
+  # OAuth2 Resource Server Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/alzcare
+          jwk-set-uri: http://keycloak:8080/realms/alzcare/protocol/openid-connect/certs
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: gateway-service
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    com.alzcare.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{X-Correlation-ID}] %-5level %logger{36} - %msg%n"
+
+---
+# Local development profile
+spring:
+  config:
+    activate:
+      on-profile: local
+  cloud:
+    gateway:
+      routes:
+        # Identity Service
+        - id: identity-service
+          uri: http://localhost:8001
+          predicates:
+            - Path=/api/v1/patients/**,/api/v1/doctors/**,/api/v1/caregivers/**,/api/v1/admin/**
+          filters:
+            - StripPrefix=0
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+
+
+        # Event Ingestion Service - Local
+        - id: event-ingestion
+          uri: http://localhost:8002
+          predicates:
+            - Path=/api/cameras/**,/api/events/**,/api/patterns/**
+          filters:
+            - StripPrefix=0
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+        # Safety Alert Engine - Local
+        - id: safety-alert-engine
+          uri: http://localhost:8003
+          predicates:
+            - Path=/api/behavior-logs/**, /api/alerts/**
+          filters:
+            - StripPrefix=0
+
+        # Notification Service - Local
+        - id: notification-service
+          uri: http://localhost:8004
+          predicates:
+            - Path=/api/v1/notifications/**,/api/v1/notification-templates/**,/api/v1/schedules/**
+          filters:
+            - StripPrefix=0
+
+        # Care Team Service - Local
+        - id: care-team-service
+          uri: http://localhost:8008
+          predicates:
+            - Path=/api/v1/care-team/**
+          filters:
+            - StripPrefix=0
+
+        # Community Social Service - Local - Route for /api/community/**
+        - id: community-social-service
+          uri: http://localhost:8009
+          predicates:
+            - Path=/api/community/**
+          filters:
+            - StripPrefix=2
+
+        # Keycloak - Local
+        - id: keycloak
+          uri: http://localhost:8090
+          predicates:
+            - Path=/realms/**, /resources/**
+          filters:
+            - StripPrefix=0
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/alzcare
+          jwk-set-uri: http://localhost:8090/realms/alzcare/protocol/openid-connect/certs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
