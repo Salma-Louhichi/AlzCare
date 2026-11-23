@@ -1,0 +1,25 @@
+# ---------------------------------------------------------------------------
+# AlzCare monorepo - root ignore rules
+# (backend/ and frontend/ add their own stack-specific rules)
+# ---------------------------------------------------------------------------
+
+# Local-only working notes (never published)
+.local-notes/
+
+# Secrets & local environment
+.env
+.env.*
+!.env.example
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Dependencies & build output
+node_modules/
+**/target/
+dist/
