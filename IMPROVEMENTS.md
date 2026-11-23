@@ -21,7 +21,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-4 | P0 | Frontend | Login silently falls back to hard-coded mock users when the backend is unreachable | ⏳ Planned |
 | SEC-5 | P0 | Frontend | Route guard checks only "logged in", not the user's role | ⏳ Planned |
 | SEC-6 | P1 | Backend | Infrastructure credentials hard-coded in docker-compose | ⏳ Planned |
-| SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ⏳ Planned |
+| SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ✅ Done |
 | SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ⏳ Planned |
 | SEC-9 | P2 | Frontend | OAuth2 password grant + tokens in `localStorage` | ⏳ Planned |
 | BLD-1 | P0 | Backend | Services don't compile on current JDKs (Lombok / annotation processing) | ✅ Done |
@@ -143,8 +143,12 @@ so a deployment can override all of them without editing tracked files.
 
 ### SEC-7 · Invalid CORS wildcard
 `configuration.setAllowedOrigins(List.of(..., "http://*:4200"))` doesn't work. Wildcards are only
-supported through `setAllowedOriginPatterns`. **Fix:** origins move to configuration
-(`alzcare.cors.allowed-origin-patterns`) with sensible local defaults.
+supported through `setAllowedOriginPatterns`. **Fix (done):** the gateway uses
+`setAllowedOriginPatterns`, read from `alzcare.cors.allowed-origin-patterns` (env
+`ALZCARE_CORS_ALLOWED_ORIGIN_PATTERNS`), defaulting to the local dev origins.
+**Follow-up:** CORS is configured twice: in Spring Security and in
+`spring.cloud.gateway.globalcors` (config repo). Keep one of them to avoid duplicate
+`Access-Control-Allow-*` headers.
 
 ### SEC-8 · Weak generated passwords
 `DoctorPatientProvisioningService.generatePatientPassword()` returns `"Patient1!" + 8 hex chars`

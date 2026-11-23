@@ -40,6 +40,9 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     private String jwkSetUri;
 
+    @Value("${alzcare.cors.allowed-origin-patterns:http://localhost:4200,http://localhost:4201,http://127.0.0.1:4200,http://127.0.0.1:4201}")
+    private List<String> allowedOriginPatterns;
+
     /**
      * Public paths that don't require authentication.
      */
@@ -153,14 +156,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200",
-                "http://localhost:4201",
-                "http://127.0.0.1:4200",
-                "http://127.0.0.1:4201",
-                "http://*:4200" // Any IP on port 4200
-
-        ));
+        // setAllowedOrigins() does not understand wildcards (the former "http://*:4200" entry never
+        // matched anything). Patterns are explicit and configurable per environment, e.g.
+        // ALZCARE_CORS_ALLOWED_ORIGIN_PATTERNS=https://app.example.com
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
