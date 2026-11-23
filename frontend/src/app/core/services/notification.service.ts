@@ -79,7 +79,7 @@ export class NotificationService {
    * Mark a specific notification as read
    */
   markAsRead(notificationId: string): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/${notificationId}/read`, {}).pipe(
+    return this.http.put<void>(`${this.apiUrl}/${notificationId}/read`, {}).pipe(
       tap(() => this.refreshUnreadCount()),
       catchError(error => {
         console.error('[NotificationService] Failed to mark notification as read:', error);
