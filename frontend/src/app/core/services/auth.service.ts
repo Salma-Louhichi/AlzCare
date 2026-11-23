@@ -22,58 +22,15 @@ export class AuthService {
   private tokenRefreshedSubject = new Subject<TokenResponse>();
   public tokenRefreshed$ = this.tokenRefreshedSubject.asObservable();
 
-  // Mock users for fallback (when backend is not available)
-  private mockUsers = [
-    {
-      id: '1',
-      email: 'patient@example.com',
-      name: 'John Patient',
-      role: 'patient' as UserRole,
-      password: 'Password123!',
-      token: 'mock-patient-token'
-    },
-    {
-      id: '2',
-      email: 'caregiver@example.com',
-      name: 'Sarah Caregiver',
-      role: 'caregiver' as UserRole,
-      password: 'Password123!',
-      token: 'mock-caregiver-token'
-    },
-    {
-      id: '3',
-      email: 'doctor@example.com',
-      name: 'Dr. Michael',
-      role: 'doctor' as UserRole,
-      password: 'Password123!',
-      token: 'mock-doctor-token'
-    },
-    {
-      id: '4',
-      email: 'admin@example.com',
-      name: 'Admin User',
-      role: 'admin' as UserRole,
-      password: 'Password123!',
-      token: 'mock-admin-token'
-    }
-  ];
-
-  // Flag to toggle between Keycloak and mock auth
-  private useKeycloak = true;
-
   constructor(private http: HttpClient) {
     this.loadFromLocalStorage();
   }
 
   /**
-   * Login - tries Keycloak first, falls back to mock auth if configured
+   * Login against Keycloak (OAuth2 password grant).
    */
   login(email: string, password: string): Observable<AuthUser> {
-    if (this.useKeycloak) {
-      return this.loginWithKeycloak(email, password);
-    } else {
-      return this.loginWithMock(email, password);
-    }
+    return this.loginWithKeycloak(email, password);
   }
 
   /**
@@ -122,42 +79,13 @@ export class AuthService {
         return authUser;
       }),
       catchError(error => {
-        // If it's an authentication error (400 or 401), don't fallback - propagate the error
         if (error.status === 401 || error.status === 400) {
           return throwError(() => new Error('Invalid email or password'));
         }
-        // For other errors (network, server down), fallback to mock auth
-        return this.loginWithMock(username, password);
+        // Network error or server failure: never fall back to local/mock credentials
+        return throwError(() => new Error('Authentication service is unavailable. Please try again later.'));
       })
     );
-  }
-
-  /**
-   * Mock login for development/testing
-   */
-  private loginWithMock(email: string, password: string): Observable<AuthUser> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        const user = this.mockUsers.find(u => u.email === email && u.password === password);
-        if (user) {
-          const authUser: AuthUser = {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            token: user.token
-          };
-          this.currentUserSubject.next(authUser);
-          this.isAuthenticatedSubject.next(true);
-          localStorage.setItem('currentUser', JSON.stringify(authUser));
-          localStorage.setItem('access_token', user.token);
-          observer.next(authUser);
-          observer.complete();
-        } else {
-          observer.error(new Error('Invalid credentials'));
-        }
-      }, 500);
-    });
   }
 
   /**
@@ -337,13 +265,6 @@ export class AuthService {
    */
   isAuthenticated(): boolean {
     return this.isAuthenticatedSubject.value;
-  }
-
-  /**
-   * Toggle between Keycloak and mock authentication
-   */
-  setUseKeycloak(use: boolean): void {
-    this.useKeycloak = use;
   }
 
   private loadFromLocalStorage(): void {

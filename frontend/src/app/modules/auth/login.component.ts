@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ValidationUtils } from '../../core/utils/validation.utils';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -29,6 +30,9 @@ export class LoginComponent {
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
+
+  /** Demo accounts exist only in the local Keycloak realm import - never show them in production builds. */
+  readonly showDemoAccounts = !environment.production;
 
   fillCredentials(email: string, password: string): void {
     this.email = email;

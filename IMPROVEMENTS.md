@@ -18,7 +18,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-1 | P0 | Backend | Unauthenticated endpoint lets anyone assign a patient to any doctor | ✅ Done |
 | SEC-2 | P0 | Backend | Services bypass the gateway: identity/notification have no auth and their ports are published | ✅ Ports · ⏳ per-service JWT |
 | SEC-3 | P0 | Repo | Real third-party secrets were in source (Cloudinary secret, TomTom key) | ✅ Removed · ⚠️ rotate keys |
-| SEC-4 | P0 | Frontend | Login silently falls back to hard-coded mock users when the backend is unreachable | ⏳ Planned |
+| SEC-4 | P0 | Frontend | Login silently falls back to hard-coded mock users when the backend is unreachable | ✅ Done |
 | SEC-5 | P0 | Frontend | Route guard checks only "logged in", not the user's role | ⏳ Planned |
 | SEC-6 | P1 | Backend | Infrastructure credentials hard-coded in docker-compose | ✅ Done |
 | SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ✅ Done |
@@ -121,8 +121,10 @@ other than 400/401 (network error, 5xx, gateway down), `loginWithKeycloak` falls
 backend would reject the fake token, but users would see a "logged-in" UI that behaves
 erratically. It also hides real outages.
 
-**Fix.** The mock users and the fallback are removed. Network and server errors are shown
-to the user as "Authentication service unavailable".
+**Fix (done).** The mock users, `loginWithMock` and `setUseKeycloak` are removed. Network and
+server errors now show "Authentication service is unavailable". The login page's
+"Demo accounts" shortcuts (real users from the dev realm import) are only shown when
+`environment.production` is false.
 
 ### SEC-5 · Role-less route guard
 
