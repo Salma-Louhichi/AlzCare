@@ -3,6 +3,10 @@
 # Infrastructure: Eureka, Config Server, RabbitMQ, Keycloak, MongoDB
 # Services: Identity Service, Gateway Service, Safety Alert Engine, Notification Service
 #
+# Network exposure: only the API gateway (8080) and Keycloak (8090) listen on all
+# interfaces. Every other port is bound to 127.0.0.1 for local debugging only, so
+# services cannot be called from other machines in a way that skips the gateway's JWT checks.
+#
 # Default:  docker compose up -d
 #   Starts only services whose source exists in this repo (core stack + care-team).
 # Full stack (requires extra folders: safety-alert-engine, event-ingestion,
@@ -29,7 +33,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
     networks:
       - backend-network
     healthcheck:
@@ -67,7 +71,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8888:8888"
+      - "127.0.0.1:8888:8888"
     volumes:
       - ./config-server/src/main/resources/config-repo:/config-repo:ro
     networks:
@@ -103,8 +107,8 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     ports:
-      - "5672:5672"      # AMQP port
-      - "15672:15672"    # Management UI
+      - "127.0.0.1:5672:5672"      # AMQP port
+      - "127.0.0.1:15672:15672"    # Management UI
     networks:
       - backend-network
     healthcheck:
@@ -137,7 +141,7 @@ services:
     volumes:
       - pg_identity:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     networks:
       - backend-network
       - database-network
@@ -187,7 +191,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     networks:
       - backend-network
       - database-network
@@ -227,7 +231,7 @@ services:
     volumes:
       - pg_keycloak:/var/lib/postgresql/data
     ports:
-      - "5439:5432"
+      - "127.0.0.1:5439:5432"
     networks:
       - backend-network
       - database-network
@@ -298,7 +302,7 @@ services:
     volumes:
       - pg_safety:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     networks:
       - backend-network
       - database-network
@@ -341,7 +345,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8003:8003"
+      - "127.0.0.1:8003:8003"
     networks:
       - backend-network
       - database-network
@@ -426,7 +430,7 @@ services:
     volumes:
       - mongo_notif:/data/db
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     networks:
       - backend-network
       - database-network
@@ -458,7 +462,7 @@ services:
     volumes:
       - mysql_careteam:/var/lib/mysql
     ports:
-      - "3307:3306"
+      - "127.0.0.1:3307:3306"
     networks:
       - backend-network
       - database-network
@@ -491,7 +495,7 @@ services:
     volumes:
       - mysql_community:/var/lib/mysql
     ports:
-      - "3308:3306"
+      - "127.0.0.1:3308:3306"
     networks:
       - backend-network
       - database-network
@@ -538,7 +542,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8004:8004"
+      - "127.0.0.1:8004:8004"
     networks:
       - backend-network
       - database-network
@@ -582,7 +586,7 @@ services:
     volumes:
       - pg_event:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      - "127.0.0.1:5434:5432"
     networks:
       - backend-network
       - database-network
@@ -626,7 +630,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8002:8002"
+      - "127.0.0.1:8002:8002"
     networks:
       - backend-network
       - database-network
@@ -678,7 +682,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8008:8008"
+      - "127.0.0.1:8008:8008"
     networks:
       - backend-network
       - database-network
@@ -730,7 +734,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8009:8009"
+      - "127.0.0.1:8009:8009"
     networks:
       - backend-network
       - database-network

@@ -16,11 +16,11 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | ID | Priority | Area | Item | Status |
 |----|----------|------|------|--------|
 | SEC-1 | P0 | Backend | Unauthenticated endpoint lets anyone assign a patient to any doctor | ✅ Done |
-| SEC-2 | P0 | Backend | Services bypass the gateway: identity/notification have no auth and their ports are published | ⏳ Planned |
+| SEC-2 | P0 | Backend | Services bypass the gateway: identity/notification have no auth and their ports are published | ✅ Ports · ⏳ per-service JWT |
 | SEC-3 | P0 | Repo | Real third-party secrets were in source (Cloudinary secret, TomTom key) | ✅ Removed · ⚠️ rotate keys |
 | SEC-4 | P0 | Frontend | Login silently falls back to hard-coded mock users when the backend is unreachable | ⏳ Planned |
 | SEC-5 | P0 | Frontend | Route guard checks only "logged in", not the user's role | ⏳ Planned |
-| SEC-6 | P1 | Backend | Infrastructure credentials hard-coded in docker-compose | ⏳ Planned |
+| SEC-6 | P1 | Backend | Infrastructure credentials hard-coded in docker-compose | ✅ Done |
 | SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ✅ Done |
 | SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ⏳ Planned |
 | SEC-9 | P2 | Frontend | OAuth2 password grant + tokens in `localStorage` | ⏳ Planned |
@@ -87,9 +87,10 @@ patient → 403, self → 200, admin → 200).
 Anyone who can reach the host can call `http://host:8001/api/v1/admin/users` with no token.
 
 **Fix.**
-- application services and databases are no longer published in docker-compose. Only
-  the gateway (8080), Keycloak (8090), and the Eureka/RabbitMQ dashboards are. Debug ports are
-  bound to `127.0.0.1` where they are kept.
+- ✅ Done: in docker-compose only the gateway (8080) and Keycloak (8090) listen on all
+  interfaces. Every service, database and dashboard port is now bound to `127.0.0.1`, so local
+  debugging (Swagger, DB clients) still works but other machines can't reach them. Production
+  deployments should not publish them at all.
 - ⏳ Next: make every service an OAuth2 resource server (defence in depth). care-team already is.
   identity-service and notification-service should follow, with `@PreAuthorize` on admin
   endpoints.
@@ -138,8 +139,11 @@ user's role and redirects to `/dashboard` (their own area) when it doesn't match
 ### SEC-6 · Hard-coded infrastructure credentials
 `KEYCLOAK_ADMIN_PASSWORD: admin`, `RABBITMQ_DEFAULT_PASS: alzcare123`,
 `CONFIG_SERVER_PASSWORD: config123` and `KC_DB_PASSWORD: keycloak_password` were literal values in
-docker-compose. **Fix:** each is now `${VAR:-dev-default}`, documented in `.env.example`,
-so a deployment can override all of them without editing tracked files.
+docker-compose. **Fix (done):** each is now `${VAR:-dev-default}`, documented in
+`.env.example`. The config repo reads the same variables (Keycloak admin account for
+identity-service, RabbitMQ account for notification-service), so one `.env` change applies
+everywhere. Before, the docker profiles had their own hard-coded copies that would have silently
+overridden the environment.
 
 ### SEC-7 · Invalid CORS wildcard
 `configuration.setAllowedOrigins(List.of(..., "http://*:4200"))` doesn't work. Wildcards are only
