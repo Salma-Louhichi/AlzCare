@@ -13,7 +13,7 @@ import com.alzcare.notification.enums.ScheduleType;
 import com.alzcare.notification.repositories.NotificationRepository;
 import com.alzcare.notification.repositories.NotificationScheduleRepository;
 import com.alzcare.notification.service.dynamic.DynamicSchedulerService;
-import com.alzcare.notification.service.target.IdentityServiceClient;
+import com.alzcare.notification.service.targeting.IdentityServiceClientFeign;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,7 +85,7 @@ public class NotificationScheduleIntegrationTest {
     private DynamicSchedulerService schedulerService;
 
     @MockBean
-    private IdentityServiceClient identityServiceClient;
+    private IdentityServiceClientFeign identityServiceClient;
 
     // Demo user IDs that exist in the system
     private static final String DEMO_USER_ID = "e905f36f-3263-488c-a48a-b87e0df4c3ca";

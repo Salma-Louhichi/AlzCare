@@ -25,7 +25,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ⏳ Planned |
 | SEC-9 | P2 | Frontend | OAuth2 password grant + tokens in `localStorage` | ⏳ Planned |
 | BLD-1 | P0 | Backend | Services don't compile on current JDKs (Lombok / annotation processing) | ✅ Done |
-| BLD-2 | P0 | Backend | Test suites don't compile (stale tests) | ⏳ Planned |
+| BLD-2 | P0 | Backend | Test suites don't compile (stale tests) | ✅ Done |
 | BLD-3 | P1 | Repo | No continuous integration | ⏳ Planned |
 | BLD-4 | P1 | Backend | Spring Boot 3.2 / Spring Cloud 2023.0.0 are end-of-life | ⏳ Planned |
 | BLD-5 | P2 | Backend | No aggregator POM; versions duplicated across 6 POMs | ⏳ Planned |
@@ -158,8 +158,21 @@ module that uses Lombok.
 - notification-service: `NotificationScheduleIntegrationTest` imports
   `com.alzcare.notification.service.target.*`, but the package is `...service.targeting`.
 
-The tests can't have run for a while, so regressions went unnoticed. **Fix:** the tests
-were updated to match the current code.
+The tests can't have run for a while, so regressions went unnoticed. **Fix (done):**
+- identity: tests updated to the current model (`assessedBy` is a UUID, `assessedAt` became
+  `assessmentDate`, patients are keyed by `userId`, repository finder names). This also uncovered
+  a real bug: a malformed UUID in the URL returned **500 "Profile Creation Failed"**. It now
+  returns **400 "Invalid Parameter"** through a dedicated `MethodArgumentTypeMismatchException`
+  handler.
+- notification: fixed the import. `NotificationControllerTest` now loads the service's own
+  `SecurityConfig` (it was getting Boot's default security and 401/403 everywhere) and uses an
+  argument matcher for a DTO without `equals()`.
+- `ScheduledNotificationServiceTest` is `@Disabled` with a reason. It needs a live MongoDB on
+  localhost and sleeps for real scheduler ticks. **Follow-up:** rewrite it with Testcontainers
+  and a controllable clock.
+
+Result: identity 30/30 and notification 11/11 web/unit tests pass. Repository and integration
+tests use Testcontainers and run in CI, where Docker is available.
 
 ### BLD-3 · No CI
 **Fix:** `.github/workflows/ci.yml` runs on every push and pull request. It builds and

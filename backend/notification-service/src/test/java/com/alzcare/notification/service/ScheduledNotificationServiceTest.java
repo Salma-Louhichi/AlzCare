@@ -1,5 +1,6 @@
 package com.alzcare.notification.service;
 
+import org.junit.jupiter.api.Disabled;
 import com.alzcare.notification.entities.Notification;
 import com.alzcare.notification.repositories.NotificationRepository;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @ActiveProfiles("dev")
+@Disabled("Needs a running MongoDB on localhost and waits for real @Scheduled ticks (30 s+). "
+        + "Convert to Testcontainers with a controllable clock - see IMPROVEMENTS.md BLD-2.")
 class ScheduledNotificationServiceTest {
 
     @Autowired

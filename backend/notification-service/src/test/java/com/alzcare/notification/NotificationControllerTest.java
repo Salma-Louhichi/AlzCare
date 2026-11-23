@@ -1,5 +1,7 @@
 package com.alzcare.notification;
 
+import com.alzcare.notification.config.SecurityConfig;
+import org.springframework.context.annotation.Import;
 import com.alzcare.notification.controller.NotificationController;
 import com.alzcare.notification.dto.request.NotificationRequest;
 import com.alzcare.notification.dto.response.NotificationCountResponse;
@@ -48,6 +50,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests controller endpoints with mocked dependencies.
  */
 @WebMvcTest(NotificationController.class)
+// Load the service's own (stateless) security rules instead of Boot's default form/basic security
+@Import(SecurityConfig.class)
 public class NotificationControllerTest {
 
     @Autowired
@@ -158,7 +162,8 @@ public class NotificationControllerTest {
                 .retryCount(0)
                 .build();
 
-        when(notificationMapper.toEntity(request)).thenReturn(notification);
+        // NotificationRequest has no equals(): match any instance deserialised from the JSON body
+        when(notificationMapper.toEntity(any(NotificationRequest.class))).thenReturn(notification);
         when(notificationRepository.save(notification)).thenReturn(savedNotification);
         when(notificationRepository.findById("notif-123")).thenReturn(java.util.Optional.of(savedNotification));
         when(notificationMapper.toResponse(savedNotification)).thenReturn(sampleNotification);
