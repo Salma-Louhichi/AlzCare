@@ -1,0 +1,77 @@
+# =============================================================================
+# Notification Service - Development Profile Configuration
+# =============================================================================
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: notification_db
+      connection-timeout: 5000
+      socket-timeout: 5000
+      server-selection-timeout: 5000
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    connection-timeout: 5000
+    listener:
+      simple:
+        concurrency: 3
+        max-concurrency: 10
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          max-interval: 10000
+          multiplier: 2.0
+          stateless: true
+        default-requeue-rejected: false
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.alzcare.notification: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.amqp: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+
+# Notification Scheduling Configuration
+# Dynamic schedules are configured via admin dashboard (/api/v1/schedules)
+# No hardcoded schedules - all rules stored in MongoDB
+
+# OpenAPI / Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  info:
+    title: Notification Service API
+    description: Notification management service for AlzCare platform - Development
+    version: 1.0.0

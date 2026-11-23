@@ -1,0 +1,10 @@
+# =============================================================================
+# Docker Profile - Bootstrap Configuration Only
+# All actual configuration comes from Config Server
+# =============================================================================
+
+spring:
+  config:
+    activate:
+      on-profile: docker
+    import: "optional:configserver:http://config-server:8888"
