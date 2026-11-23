@@ -19,7 +19,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | SEC-2 | P0 | Backend | Services bypass the gateway: identity/notification have no auth and their ports are published | ✅ Ports · ⏳ per-service JWT |
 | SEC-3 | P0 | Repo | Real third-party secrets were in source (Cloudinary secret, TomTom key) | ✅ Removed · ⚠️ rotate keys |
 | SEC-4 | P0 | Frontend | Login silently falls back to hard-coded mock users when the backend is unreachable | ✅ Done |
-| SEC-5 | P0 | Frontend | Route guard checks only "logged in", not the user's role | ⏳ Planned |
+| SEC-5 | P0 | Frontend | Route guard checks only "logged in", not the user's role | ✅ Done |
 | SEC-6 | P1 | Backend | Infrastructure credentials hard-coded in docker-compose | ✅ Done |
 | SEC-7 | P1 | Backend | Gateway CORS uses an invalid wildcard origin | ✅ Done |
 | SEC-8 | P1 | Backend | Generated patient passwords are predictable and permanent | ✅ Strength · ⏳ temporary (needs SEC-9) |
@@ -131,8 +131,10 @@ server errors now show "Authentication service is unavailable". The login page's
 **Evidence.** `AuthGuard.canActivate` only checks `isAuthenticated()`. A logged-in patient can open
 `/admin/users` or `/doctor/...`.
 
-**Fix.** Each area route declares `data: { roles: [...] }`. The guard checks the current
-user's role and redirects to `/dashboard` (their own area) when it doesn't match.
+**Fix (done).** Each area route declares `data: { roles: [...] }`. `AuthGuard` checks the
+current user's role and returns a `UrlTree` to `/dashboard` (their own area) when it doesn't match.
+Unauthenticated users now go to `/login?returnUrl=…`, so they come back to the page they asked
+for. The login page already validates that `returnUrl` is a same-origin path.
 
 ---
 

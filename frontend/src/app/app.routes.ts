@@ -27,6 +27,7 @@ export const routes: Routes = [
   {
     path: 'patient',
     canActivate: [AuthGuard],
+    data: { roles: ['patient'] },
     loadComponent: () => import('./modules/patient/layout/patient-layout.component').then(m => m.PatientLayoutComponent),
     children: [
       {
@@ -67,6 +68,7 @@ export const routes: Routes = [
   {
     path: 'caregiver',
     canActivate: [AuthGuard],
+    data: { roles: ['caregiver'] },
     loadComponent: () => import('./modules/caregiver/layout/caregiver-layout.component').then(m => m.CaregiverLayoutComponent),
     children: [
       {
@@ -103,6 +105,7 @@ export const routes: Routes = [
   {
     path: 'doctor',
     canActivate: [AuthGuard],
+    data: { roles: ['doctor'] },
     loadComponent: () => import('./modules/doctor/layout/doctor-layout.component').then(m => m.DoctorLayoutComponent),
     children: [
       {
@@ -127,6 +130,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [AuthGuard],
+    data: { roles: ['admin'] },
     loadComponent: () => import('./modules/admin/layout/admin-layout.component').then(m => m.AdminLayoutComponent),
     children: [
       {
