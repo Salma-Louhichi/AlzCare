@@ -29,7 +29,7 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | BLD-3 | P1 | Repo | No continuous integration | ⏳ Planned |
 | BLD-4 | P1 | Backend | Spring Boot 3.2 / Spring Cloud 2023.0.0 are end-of-life | ⏳ Planned |
 | BLD-5 | P2 | Backend | No aggregator POM; versions duplicated across 6 POMs | ⏳ Planned |
-| FE-1 | P1 | Frontend | Services bypass the auth interceptor and read the token themselves | ⏳ Planned |
+| FE-1 | P1 | Frontend | Services duplicate the auth interceptor and read the token themselves | ✅ Done |
 | FE-2 | P1 | Frontend | Debug `console.log` statements in production code | ⏳ Planned |
 | FE-3 | P1 | Frontend | Zero unit tests | ⏳ Planned |
 | FE-4 | P2 | Frontend | Very large components (900+ lines) | ⏳ Planned |
@@ -207,11 +207,15 @@ release of its train. **Plan:** upgrade to Boot 3.4/3.5 with the matching Spring
 moving one service at a time behind CI.
 
 ### FE-1 · Token handling spread across services
-`patient.service.ts`, `safety-alert.service.ts` and `notification.service.ts` read
-`localStorage.getItem('access_token')` and build `Authorization` headers themselves, even though
-`authInterceptor` already does this and refreshes tokens. Those requests skip proactive refresh,
-so they can fail with an expired token. **Fix:** manual headers are removed and the
-interceptor is the single source of truth.
+`patient.service.ts`, `safety-alert.service.ts` and `notification.service.ts` each had a private
+`getAuthHeaders()` that read `localStorage.getItem('access_token')` and set
+`Authorization`/`Content-Type` by hand on 26 requests. `authInterceptor` already attaches (and
+overwrites) the bearer token and refreshes it, so this code was redundant. It also sent
+`Authorization: Bearer null` when logged out and forced a JSON content type on bodiless requests.
+**Fix (done):** the helpers and their headers were removed; the interceptor is the single place
+that handles tokens.
+Found while doing this: `markAsRead()` called **PATCH** `/notifications/{id}/read`, but the
+backend maps that path with `@PutMapping`, so the request could never succeed. It now uses PUT.
 
 ### FE-2 · Debug logging
 There are 35 runtime `console.log` calls in `src/`. Several of them print user ids and names

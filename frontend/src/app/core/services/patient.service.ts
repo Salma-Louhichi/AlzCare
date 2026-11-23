@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 /**
@@ -38,32 +38,17 @@ export class PatientService {
   constructor(private http: HttpClient) { }
 
   /**
-   * Get Authorization headers with Bearer token from localStorage
-   */
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('access_token');
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
-  }
-
-  /**
    * Get all patients accessible to the current user
    */
   getPatients(): Observable<PatientProfileResponse[]> {
-    return this.http.get<PatientProfileResponse[]>(`${this.baseUrl}/patients`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<PatientProfileResponse[]>(`${this.baseUrl}/patients`);
   }
 
   /**
    * Get a specific patient by ID
    */
   getPatientById(patientId: string): Observable<PatientProfileResponse> {
-    return this.http.get<PatientProfileResponse>(`${this.baseUrl}/patients/${patientId}`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<PatientProfileResponse>(`${this.baseUrl}/patients/${patientId}`);
   }
 
   /**
@@ -78,8 +63,6 @@ export class PatientService {
       });
     }
     
-    return this.http.get<PatientProfileResponse[]>(`${this.baseUrl}/patients`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<PatientProfileResponse[]>(`${this.baseUrl}/patients`);
   }
 }

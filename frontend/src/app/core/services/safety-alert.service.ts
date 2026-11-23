@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   CreateManualBehaviorLogRequest,
@@ -27,17 +27,6 @@ export class SafetyAlertService {
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Get Authorization headers with Bearer token from localStorage
-   */
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('access_token');
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
-  }
-
   // ==================== BEHAVIOR LOGS ====================
 
   /**
@@ -63,45 +52,35 @@ export class SafetyAlertService {
       ...request,
       severity: this.numberToSeverityEnum(request.severity)
     };
-    return this.http.post<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/manual`, backendRequest, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.post<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/manual`, backendRequest);
   }
 
   /**
    * Get all behavior logs for a specific patient
    */
   getBehaviorLogsByPatient(patientId: string): Observable<BehaviorLogResponse[]> {
-    return this.http.get<BehaviorLogResponse[]>(`${this.baseUrl}/behavior-logs/patient/${patientId}`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<BehaviorLogResponse[]>(`${this.baseUrl}/behavior-logs/patient/${patientId}`);
   }
 
   /**
    * Get all behavior logs pending validation
    */
   getPendingValidations(): Observable<BehaviorLogResponse[]> {
-    return this.http.get<BehaviorLogResponse[]>(`${this.baseUrl}/behavior-logs/pending`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<BehaviorLogResponse[]>(`${this.baseUrl}/behavior-logs/pending`);
   }
 
   /**
    * Validate a behavior log (confirm or mark as false alarm)
    */
   validateBehavior(behaviorLogId: string, request: ValidateBehaviorRequest): Observable<BehaviorLogResponse> {
-    return this.http.put<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/${behaviorLogId}/validate`, request, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.put<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/${behaviorLogId}/validate`, request);
   }
 
   /**
    * Get a single behavior log by ID
    */
   getBehaviorLogById(id: string): Observable<BehaviorLogResponse> {
-    return this.http.get<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/${id}`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/${id}`);
   }
 
   /**
@@ -113,18 +92,14 @@ export class SafetyAlertService {
       ...request,
       severity: this.numberToSeverityEnum(request.severity)
     };
-    return this.http.put<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/${id}`, backendRequest, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.put<BehaviorLogResponse>(`${this.baseUrl}/behavior-logs/${id}`, backendRequest);
   }
 
   /**
    * Delete a behavior log permanently
    */
   deleteBehaviorLog(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/behavior-logs/${id}`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.delete<void>(`${this.baseUrl}/behavior-logs/${id}`);
   }
 
   // ==================== ALERTS ====================
@@ -133,54 +108,42 @@ export class SafetyAlertService {
    * Get all active alerts
    */
   getActiveAlerts(): Observable<AlertResponse[]> {
-    return this.http.get<AlertResponse[]>(`${this.baseUrl}/alerts/active`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<AlertResponse[]>(`${this.baseUrl}/alerts/active`);
   }
 
   /**
    * Get all overdue alerts (escalation deadline passed)
    */
   getOverdueAlerts(): Observable<AlertResponse[]> {
-    return this.http.get<AlertResponse[]>(`${this.baseUrl}/alerts/overdue`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<AlertResponse[]>(`${this.baseUrl}/alerts/overdue`);
   }
 
   /**
    * Get all alerts for a specific patient
    */
   getAlertsByPatient(patientId: string): Observable<AlertResponse[]> {
-    return this.http.get<AlertResponse[]>(`${this.baseUrl}/alerts/patient/${patientId}`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<AlertResponse[]>(`${this.baseUrl}/alerts/patient/${patientId}`);
   }
 
   /**
    * Get a single alert by ID
    */
   getAlertById(id: string): Observable<AlertResponse> {
-    return this.http.get<AlertResponse>(`${this.baseUrl}/alerts/${id}`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<AlertResponse>(`${this.baseUrl}/alerts/${id}`);
   }
 
   /**
    * Acknowledge an alert
    */
   acknowledgeAlert(alertId: string, request: AcknowledgeAlertRequest): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/alerts/${alertId}/acknowledge`, request, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.post<void>(`${this.baseUrl}/alerts/${alertId}/acknowledge`, request);
   }
 
   /**
    * Resolve an alert
    */
   resolveAlert(alertId: string, request: ResolveAlertRequest): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/alerts/${alertId}/resolve`, request, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.post<void>(`${this.baseUrl}/alerts/${alertId}/resolve`, request);
   }
 
   /**
@@ -188,17 +151,13 @@ export class SafetyAlertService {
    */
   escalateAlert(alertId: string, userId: string, notes?: string): Observable<void> {
     const request = { userId, notes };
-    return this.http.post<void>(`${this.baseUrl}/alerts/${alertId}/escalate`, request, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.post<void>(`${this.baseUrl}/alerts/${alertId}/escalate`, request);
   }
 
   /**
    * Get history/actions for a specific alert
    */
   getAlertHistory(alertId: string): Observable<AlertHistoryResponse[]> {
-    return this.http.get<AlertHistoryResponse[]>(`${this.baseUrl}/alerts/${alertId}/history`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<AlertHistoryResponse[]>(`${this.baseUrl}/alerts/${alertId}/history`);
   }
 }

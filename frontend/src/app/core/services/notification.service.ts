@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
@@ -52,7 +52,6 @@ export class NotificationService {
     }
 
     return this.http.get<PagedNotificationResponse>(`${this.apiUrl}/user/${userId}`, {
-      headers: this.getAuthHeaders(),
       params
     }).pipe(
       catchError(error => {
@@ -66,9 +65,7 @@ export class NotificationService {
    * Get count of unread notifications for a user
    */
   getUnreadCount(userId: string): Observable<number> {
-    return this.http.get<UnreadCountResponse>(`${this.apiUrl}/user/${userId}/unread/count`, {
-      headers: this.getAuthHeaders()
-    }).pipe(
+    return this.http.get<UnreadCountResponse>(`${this.apiUrl}/user/${userId}/unread/count`).pipe(
       map(response => response.count),
       tap(count => this.unreadCountSubject.next(count)),
       catchError(error => {
@@ -82,9 +79,7 @@ export class NotificationService {
    * Mark a specific notification as read
    */
   markAsRead(notificationId: string): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/${notificationId}/read`, {}, {
-      headers: this.getAuthHeaders()
-    }).pipe(
+    return this.http.patch<void>(`${this.apiUrl}/${notificationId}/read`, {}).pipe(
       tap(() => this.refreshUnreadCount()),
       catchError(error => {
         console.error('[NotificationService] Failed to mark notification as read:', error);
@@ -97,9 +92,7 @@ export class NotificationService {
    * Mark all notifications as read for a user
    */
   markAllAsRead(userId: string): Observable<void> {
-    return this.http.put<void>(`${this.apiUrl}/user/${userId}/mark-all-read`, {}, {
-      headers: this.getAuthHeaders()
-    }).pipe(
+    return this.http.put<void>(`${this.apiUrl}/user/${userId}/mark-all-read`, {}).pipe(
       tap(() => this.unreadCountSubject.next(0)),
       catchError(error => {
         console.error('[NotificationService] Failed to mark all notifications as read:', error);
@@ -112,9 +105,7 @@ export class NotificationService {
    * Delete a notification
    */
   deleteNotification(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
-      headers: this.getAuthHeaders()
-    }).pipe(
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => this.refreshUnreadCount()),
       catchError(error => {
         console.error('[NotificationService] Failed to delete notification:', error);
@@ -127,9 +118,7 @@ export class NotificationService {
    * Get a single notification by ID
    */
   getNotificationById(id: string): Observable<Notification> {
-    return this.http.get<Notification>(`${this.apiUrl}/${id}`, {
-      headers: this.getAuthHeaders()
-    }).pipe(
+    return this.http.get<Notification>(`${this.apiUrl}/${id}`).pipe(
       catchError(error => {
         console.error('[NotificationService] Failed to get notification:', error);
         throw error;
@@ -141,9 +130,7 @@ export class NotificationService {
    * Get notifications by status for a user
    */
   getNotificationsByStatus(userId: string, status: NotificationStatus): Observable<Notification[]> {
-    return this.http.get<Notification[]>(`${this.apiUrl}/user/${userId}/status/${status}`, {
-      headers: this.getAuthHeaders()
-    }).pipe(
+    return this.http.get<Notification[]>(`${this.apiUrl}/user/${userId}/status/${status}`).pipe(
       catchError(error => {
         console.error('[NotificationService] Failed to get notifications by status:', error);
         throw error;
@@ -218,17 +205,6 @@ export class NotificationService {
   }
 
   // ==================== PRIVATE HELPERS ====================
-
-  /**
-   * Get Authorization headers with Bearer token from localStorage
-   */
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('access_token');
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
-  }
 
   /**
    * Refresh unread count without returning observable
