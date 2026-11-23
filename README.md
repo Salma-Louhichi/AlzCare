@@ -172,6 +172,8 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 ---
 
-## Origins
+## Author
 
-AlzCare started as a 4th-year engineering project (PIDEV 4SAE, 2025–2026) at Esprit School of Engineering, Tunisia, built with Iheb Jlassi, Youssef Khaldi, Arij Juili, Roudaina Saoudi and Mouhib Lafi. This repository is maintained independently by Salma Louhichi.
+**Salma Louhichi** — [@Salma-Louhichi](https://github.com/Salma-Louhichi)
+
+AlzCare originated as a 4th-year engineering project (PIDEV 4SAE, 2025–2026) at Esprit School of Engineering, Tunisia.
