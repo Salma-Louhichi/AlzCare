@@ -133,7 +133,7 @@ class DoctorProfileControllerTest {
         UUID userId = UUID.randomUUID();
 
         when(doctorProfileService.getDoctorByUserId(userId))
-                .thenThrow(new DoctorNotFoundException(userId));
+                .thenThrow(new DoctorNotFoundException("Doctor profile not found with userId: " + userId, true));
 
         // When & Then
         mockMvc.perform(get("/api/v1/doctors/user/{userId}", userId)

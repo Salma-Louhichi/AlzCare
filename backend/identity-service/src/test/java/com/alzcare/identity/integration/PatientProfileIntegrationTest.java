@@ -148,7 +148,6 @@ class PatientProfileIntegrationTest {
         updateRequest.setDateOfBirth(LocalDate.of(1950, 5, 10));
         updateRequest.setGender(GenderEnum.MALE);
         updateRequest.setPreferredLanguage(LanguageEnum.FRENCH);
-        updateRequest.setCulturalContext("Updated cultural context");
         updateRequest.setIsActive(true);
 
         ResponseEntity<PatientProfileResponse> updateResponse = restTemplate.exchange(
@@ -164,7 +163,6 @@ class PatientProfileIntegrationTest {
         assertThat(updateResponse.getBody().getFirstName()).isEqualTo("Updated");
         assertThat(updateResponse.getBody().getLastName()).isEqualTo("NameChanged");
         assertThat(updateResponse.getBody().getPreferredLanguage()).isEqualTo(LanguageEnum.FRENCH);
-        assertThat(updateResponse.getBody().getCulturalContext()).isEqualTo("Updated cultural context");
         // User ID should remain unchanged
         assertThat(updateResponse.getBody().getUserId()).isEqualTo(updateUserId);
     }
@@ -227,7 +225,6 @@ class PatientProfileIntegrationTest {
         createRequest.setDateOfBirth(LocalDate.of(1945, 12, 25));
         createRequest.setGender(GenderEnum.FEMALE);
         createRequest.setPreferredLanguage(LanguageEnum.ARABIC);
-        createRequest.setCulturalContext("Requires Arabic-speaking caregiver");
         createRequest.setPhotoUrl("https://example.com/photos/patient.jpg");
 
         // When - Create patient
@@ -247,7 +244,6 @@ class PatientProfileIntegrationTest {
         assertThat(body.getDateOfBirth()).isEqualTo(LocalDate.of(1945, 12, 25));
         assertThat(body.getGender()).isEqualTo(GenderEnum.FEMALE);
         assertThat(body.getPreferredLanguage()).isEqualTo(LanguageEnum.ARABIC);
-        assertThat(body.getCulturalContext()).isEqualTo("Requires Arabic-speaking caregiver");
         assertThat(body.getPhotoUrl()).isEqualTo("https://example.com/photos/patient.jpg");
         assertThat(body.getIsActive()).isTrue();
         assertThat(body.getId()).isNotNull();

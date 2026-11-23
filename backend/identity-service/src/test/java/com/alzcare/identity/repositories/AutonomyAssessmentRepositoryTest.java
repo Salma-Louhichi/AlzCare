@@ -45,7 +45,7 @@ class AutonomyAssessmentRepositoryTest {
         patientProfileRepository.deleteAll();
 
         patient = new PatientProfile();
-        patient.setKeycloakId("patient-assessment-123");
+        patient.setUserId(UUID.nameUUIDFromBytes("patient-assessment-123".getBytes()));
         patient.setFirstName("John");
         patient.setLastName("Doe");
         patient.setDateOfBirth(LocalDate.of(1950, 5, 15));
@@ -64,8 +64,8 @@ class AutonomyAssessmentRepositoryTest {
         assessment.setMedicationLevel(medication);
         assessment.setMobilityLevel(mobility);
         assessment.setFeedingLevel(feeding);
-        assessment.setAssessedBy(assessedBy);
-        assessment.setAssessedAt(assessedAt);
+        assessment.setAssessedBy(UUID.nameUUIDFromBytes(assessedBy.getBytes()));
+        assessment.setAssessmentDate((assessedAt).toLocalDate());
         return assessment;
     }
 
@@ -161,7 +161,7 @@ class AutonomyAssessmentRepositoryTest {
         autonomyAssessmentRepository.save(assessment2);
 
         // When
-        List<AutonomyAssessment> assessments = autonomyAssessmentRepository.findByPatientId(patient.getId());
+        List<AutonomyAssessment> assessments = autonomyAssessmentRepository.findByPatient_Id(patient.getId());
 
         // Then
         assertThat(assessments).hasSize(2);
@@ -174,7 +174,7 @@ class AutonomyAssessmentRepositoryTest {
         UUID patientId = patient.getId();
 
         // When
-        List<AutonomyAssessment> assessments = autonomyAssessmentRepository.findByPatientId(patientId);
+        List<AutonomyAssessment> assessments = autonomyAssessmentRepository.findByPatient_Id(patientId);
 
         // Then
         assertThat(assessments).isEmpty();
@@ -201,11 +201,11 @@ class AutonomyAssessmentRepositoryTest {
 
         // When
         Optional<AutonomyAssessment> latest = autonomyAssessmentRepository
-                .findTopByPatientIdOrderByAssessedAtDesc(patient.getId());
+                .findTopByPatient_IdOrderByCreatedAtDesc(patient.getId());
 
         // Then
         assertThat(latest).isPresent();
-        assertThat(latest.get().getAssessedBy()).isEqualTo("Dr. Recent");
+        assertThat(latest.get().getAssessedBy()).isEqualTo(UUID.nameUUIDFromBytes("Dr. Recent".getBytes()));
         assertThat(latest.get().getOverallScore()).isEqualTo(100);
     }
 
@@ -216,7 +216,7 @@ class AutonomyAssessmentRepositoryTest {
 
         // When
         Optional<AutonomyAssessment> latest = autonomyAssessmentRepository
-                .findTopByPatientIdOrderByAssessedAtDesc(patient.getId());
+                .findTopByPatient_IdOrderByCreatedAtDesc(patient.getId());
 
         // Then
         assertThat(latest).isEmpty();
@@ -228,7 +228,7 @@ class AutonomyAssessmentRepositoryTest {
         // Given - Assessment with non-existent patient
         PatientProfile nonExistentPatient = new PatientProfile();
         nonExistentPatient.setId(UUID.randomUUID());
-        nonExistentPatient.setKeycloakId("non-existent");
+        nonExistentPatient.setUserId(UUID.nameUUIDFromBytes("non-existent".getBytes()));
         nonExistentPatient.setFirstName("Non");
         nonExistentPatient.setLastName("Existent");
         nonExistentPatient.setDateOfBirth(LocalDate.of(1950, 1, 1));

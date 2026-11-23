@@ -61,7 +61,6 @@ class PatientProfileControllerTest {
         patientProfileResponse.setDateOfBirth(LocalDate.of(1980, 5, 15));
         patientProfileResponse.setGender(GenderEnum.MALE);
         patientProfileResponse.setPreferredLanguage(LanguageEnum.ENGLISH);
-        patientProfileResponse.setCulturalContext("European");
         patientProfileResponse.setPhotoUrl("https://example.com/photo.jpg");
         patientProfileResponse.setIsActive(true);
         patientProfileResponse.setCreatedAt(OffsetDateTime.now());
@@ -74,7 +73,6 @@ class PatientProfileControllerTest {
         validCreateRequest.setDateOfBirth(LocalDate.of(1980, 5, 15));
         validCreateRequest.setGender(GenderEnum.MALE);
         validCreateRequest.setPreferredLanguage(LanguageEnum.ENGLISH);
-        validCreateRequest.setCulturalContext("European");
         validCreateRequest.setPhotoUrl("https://example.com/photo.jpg");
 
         validUpdateRequest = new PatientUpdateRequest();
@@ -83,7 +81,6 @@ class PatientProfileControllerTest {
         validUpdateRequest.setDateOfBirth(LocalDate.of(1980, 5, 15));
         validUpdateRequest.setGender(GenderEnum.MALE);
         validUpdateRequest.setPreferredLanguage(LanguageEnum.ENGLISH);
-        validUpdateRequest.setCulturalContext("European");
         validUpdateRequest.setPhotoUrl("https://example.com/photo.jpg");
         validUpdateRequest.setIsActive(true);
     }
@@ -183,7 +180,6 @@ class PatientProfileControllerTest {
                 .andExpect(jsonPath("$.dateOfBirth").value("1980-05-15"))
                 .andExpect(jsonPath("$.gender").value("MALE"))
                 .andExpect(jsonPath("$.preferredLanguage").value("ENGLISH"))
-                .andExpect(jsonPath("$.culturalContext").value("European"))
                 .andExpect(jsonPath("$.photoUrl").value("https://example.com/photo.jpg"))
                 .andExpect(jsonPath("$.isActive").value(true));
 
@@ -217,7 +213,6 @@ class PatientProfileControllerTest {
         updatedResponse.setDateOfBirth(LocalDate.of(1985, 8, 20));
         updatedResponse.setGender(GenderEnum.FEMALE);
         updatedResponse.setPreferredLanguage(LanguageEnum.FRENCH);
-        updatedResponse.setCulturalContext("American");
         updatedResponse.setPhotoUrl("https://example.com/new-photo.jpg");
         updatedResponse.setIsActive(false);
         updatedResponse.setCreatedAt(OffsetDateTime.now());
@@ -232,7 +227,6 @@ class PatientProfileControllerTest {
         updateRequest.setDateOfBirth(LocalDate.of(1985, 8, 20));
         updateRequest.setGender(GenderEnum.FEMALE);
         updateRequest.setPreferredLanguage(LanguageEnum.FRENCH);
-        updateRequest.setCulturalContext("American");
         updateRequest.setPhotoUrl("https://example.com/new-photo.jpg");
         updateRequest.setIsActive(false);
 

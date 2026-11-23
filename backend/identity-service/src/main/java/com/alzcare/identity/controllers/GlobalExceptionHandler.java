@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.time.Instant;
@@ -125,6 +126,25 @@ public class GlobalExceptionHandler {
         problemDetail.setType(URI.create(ERROR_URI_BASE + errorType));
         problemDetail.setProperty("timestamp", Instant.now());
         return ResponseEntity.status(status).body(problemDetail);
+    }
+
+    /**
+     * Handles malformed path/query parameters (e.g. a non-UUID patient id).
+     * Without this handler they fell through to the RuntimeException handler and
+     * were reported as a 500 "Profile Creation Failed".
+     *
+     * @param ex the exception
+     * @return a ProblemDetail response with 400 status
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                String.format("Invalid value '%s' for parameter '%s'", ex.getValue(), ex.getName()));
+        problemDetail.setTitle("Invalid Parameter");
+        problemDetail.setType(URI.create(ERROR_URI_BASE + "invalid-parameter"));
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.badRequest().body(problemDetail);
     }
 
     /**

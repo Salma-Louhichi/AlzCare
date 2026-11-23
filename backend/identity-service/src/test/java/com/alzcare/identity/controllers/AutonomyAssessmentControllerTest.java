@@ -75,9 +75,9 @@ class AutonomyAssessmentControllerTest {
         request.setMedicationLevel(AutonomyLevel.ASSISTED);
         request.setMobilityLevel(AutonomyLevel.ASSISTED);
         request.setFeedingLevel(AutonomyLevel.INDEPENDENT);
-        request.setAssessedBy("Dr. Sarah Johnson");
+        request.setAssessedBy(UUID.nameUUIDFromBytes("Dr. Sarah Johnson".getBytes()));
         request.setNotes("Patient shows good progress in mobility");
-        request.setAssessedAt(assessedAt);
+        request.setAssessmentDate((assessedAt).toLocalDate());
         return request;
     }
 
@@ -90,9 +90,9 @@ class AutonomyAssessmentControllerTest {
         response.setMobilityLevel(AutonomyLevel.ASSISTED);
         response.setFeedingLevel(AutonomyLevel.INDEPENDENT);
         response.setOverallScore(75);
-        response.setAssessedBy("Dr. Sarah Johnson");
+        response.setAssessedBy(UUID.nameUUIDFromBytes("Dr. Sarah Johnson".getBytes()));
         response.setNotes("Patient shows good progress in mobility");
-        response.setAssessedAt(assessedAt);
+        response.setAssessmentDate((assessedAt).toLocalDate());
         response.setCreatedAt(createdAt);
         return response;
     }
@@ -120,9 +120,9 @@ class AutonomyAssessmentControllerTest {
                 .andExpect(jsonPath("$.mobilityLevel").value("ASSISTED"))
                 .andExpect(jsonPath("$.feedingLevel").value("INDEPENDENT"))
                 .andExpect(jsonPath("$.overallScore").value(75))
-                .andExpect(jsonPath("$.assessedBy").value("Dr. Sarah Johnson"))
+                .andExpect(jsonPath("$.assessedBy").value(UUID.nameUUIDFromBytes("Dr. Sarah Johnson".getBytes()).toString()))
                 .andExpect(jsonPath("$.notes").value("Patient shows good progress in mobility"))
-                .andExpect(jsonPath("$.assessedAt").exists())
+                .andExpect(jsonPath("$.assessmentDate").exists())
                 .andExpect(jsonPath("$.createdAt").exists());
 
         verify(autonomyAssessmentService).createAssessment(eq(patientId), any(AutonomyAssessmentRequest.class));
@@ -187,9 +187,9 @@ class AutonomyAssessmentControllerTest {
                 .andExpect(jsonPath("$.mobilityLevel").value("ASSISTED"))
                 .andExpect(jsonPath("$.feedingLevel").value("INDEPENDENT"))
                 .andExpect(jsonPath("$.overallScore").value(75))
-                .andExpect(jsonPath("$.assessedBy").value("Dr. Sarah Johnson"))
+                .andExpect(jsonPath("$.assessedBy").value(UUID.nameUUIDFromBytes("Dr. Sarah Johnson".getBytes()).toString()))
                 .andExpect(jsonPath("$.notes").value("Patient shows good progress in mobility"))
-                .andExpect(jsonPath("$.assessedAt").exists())
+                .andExpect(jsonPath("$.assessmentDate").exists())
                 .andExpect(jsonPath("$.createdAt").exists());
 
         verify(autonomyAssessmentService).getLatestAssessment(patientId);
@@ -246,9 +246,9 @@ class AutonomyAssessmentControllerTest {
         olderAssessment.setMobilityLevel(AutonomyLevel.ASSISTED);
         olderAssessment.setFeedingLevel(AutonomyLevel.ASSISTED);
         olderAssessment.setOverallScore(50);
-        olderAssessment.setAssessedBy("Dr. Michael Chen");
+        olderAssessment.setAssessedBy(UUID.nameUUIDFromBytes("Dr. Michael Chen".getBytes()));
         olderAssessment.setNotes("Initial assessment - more support needed");
-        olderAssessment.setAssessedAt(assessedAt.minusMonths(1));
+        olderAssessment.setAssessmentDate((assessedAt.minusMonths(1)).toLocalDate());
         olderAssessment.setCreatedAt(createdAt.minusMonths(1));
 
         List<AutonomyAssessmentResponse> assessmentHistory = List.of(assessmentResponse, olderAssessment);
@@ -267,7 +267,7 @@ class AutonomyAssessmentControllerTest {
                 .andExpect(jsonPath("$[1].id").value(assessmentId2.toString()))
                 .andExpect(jsonPath("$[1].hygieneLevel").value("ASSISTED"))
                 .andExpect(jsonPath("$[1].overallScore").value(50))
-                .andExpect(jsonPath("$[1].assessedBy").value("Dr. Michael Chen"));
+                .andExpect(jsonPath("$[1].assessedBy").value(UUID.nameUUIDFromBytes("Dr. Michael Chen".getBytes()).toString()));
 
         verify(autonomyAssessmentService).getAssessmentHistory(patientId);
     }
@@ -313,14 +313,13 @@ class AutonomyAssessmentControllerTest {
     // ====================================================================================
 
     @Test
-    @DisplayName("Should return 500 when patient ID is not a valid UUID (MethodArgumentTypeMismatchException)")
-    void shouldReturn500WhenPatientIdIsNotValidUuid() throws Exception {
-        // When & Then - MethodArgumentTypeMismatchException is not handled by GlobalExceptionHandler
-        // so it falls through to the generic exception handler which returns 500
+    @DisplayName("Should return 400 when patient ID is not a valid UUID (MethodArgumentTypeMismatchException)")
+    void shouldReturn400WhenPatientIdIsNotValidUuid() throws Exception {
+        // When & Then - a malformed id is a client error, not a server error
         mockMvc.perform(get("/api/v1/patients/invalid-uuid/autonomy")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.title").value("Internal Server Error"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid Parameter"));
     }
 
     @Test
@@ -333,9 +332,9 @@ class AutonomyAssessmentControllerTest {
         requestWithAllLevels.setMedicationLevel(AutonomyLevel.ASSISTED);
         requestWithAllLevels.setMobilityLevel(AutonomyLevel.DEPENDENT);
         requestWithAllLevels.setFeedingLevel(AutonomyLevel.INDEPENDENT);
-        requestWithAllLevels.setAssessedBy("Nurse Jane Doe");
+        requestWithAllLevels.setAssessedBy(UUID.nameUUIDFromBytes("Nurse Jane Doe".getBytes()));
         requestWithAllLevels.setNotes("Comprehensive assessment");
-        requestWithAllLevels.setAssessedAt(assessedAt);
+        requestWithAllLevels.setAssessmentDate((assessedAt).toLocalDate());
 
         AutonomyAssessmentResponse responseWithAllLevels = new AutonomyAssessmentResponse();
         responseWithAllLevels.setId(assessmentId);
@@ -345,9 +344,9 @@ class AutonomyAssessmentControllerTest {
         responseWithAllLevels.setMobilityLevel(AutonomyLevel.DEPENDENT);
         responseWithAllLevels.setFeedingLevel(AutonomyLevel.INDEPENDENT);
         responseWithAllLevels.setOverallScore(42);
-        responseWithAllLevels.setAssessedBy("Nurse Jane Doe");
+        responseWithAllLevels.setAssessedBy(UUID.nameUUIDFromBytes("Nurse Jane Doe".getBytes()));
         responseWithAllLevels.setNotes("Comprehensive assessment");
-        responseWithAllLevels.setAssessedAt(assessedAt);
+        responseWithAllLevels.setAssessmentDate((assessedAt).toLocalDate());
         responseWithAllLevels.setCreatedAt(createdAt);
 
         when(autonomyAssessmentService.createAssessment(eq(patientId), any(AutonomyAssessmentRequest.class)))
