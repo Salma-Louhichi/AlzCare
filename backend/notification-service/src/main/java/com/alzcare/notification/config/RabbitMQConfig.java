@@ -2,7 +2,10 @@ package com.alzcare.notification.config;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +53,24 @@ public class RabbitMQConfig {
     /**
      * Main notification exchange for receiving alert events.
      */
+    /**
+     * JSON message format for events exchanged with other services.
+     *
+     * <p>Without this bean Spring AMQP falls back to SimpleMessageConverter, which only handles
+     * String, byte[] and java.io.Serializable payloads. NotificationEvent is none of these, so no
+     * producer could deliver an event to {@code NotificationEventListener}. Spring Boot applies this
+     * converter to both RabbitTemplate and the listener containers.</p>
+     *
+     * <p>The target type is always inferred from the listener method parameter, so producers
+     * don't need to share Java class names through the {@code __TypeId__} header.</p>
+     */
+    @Bean
+    public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+        converter.setAlwaysConvertToInferredType(true);
+        return converter;
+    }
+
     @Bean
     public DirectExchange notificationExchange() {
         return new DirectExchange(notificationExchangeName, true, false);
