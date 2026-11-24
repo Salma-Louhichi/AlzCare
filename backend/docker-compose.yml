@@ -393,7 +393,7 @@ services:
         -XX:InitialRAMPercentage=50.0
         -Djava.security.egd=file:/dev/./urandom
     ports:
-      - "8080:8080"
+      - "${GATEWAY_HOST_PORT:-8080}:8080"
     networks:
       - backend-network
     depends_on:
@@ -430,7 +430,7 @@ services:
     volumes:
       - mongo_notif:/data/db
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:${MONGO_HOST_PORT:-27017}:27017"
     networks:
       - backend-network
       - database-network

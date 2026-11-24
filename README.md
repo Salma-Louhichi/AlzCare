@@ -168,6 +168,15 @@ npm install
 npm start                     # http://localhost:4200 (proxies /api to the gateway)
 ```
 
+Open http://localhost:4200. In local development the login page offers demo accounts
+(patient, caregiver, doctor and admin) from the imported Keycloak realm.
+
+**Ports already in use?** If something else on your machine uses 8080 or 27017, set
+`GATEWAY_HOST_PORT` / `MONGO_HOST_PORT` in `backend/.env` (e.g. 8081 / 27018) and start the
+frontend with `GATEWAY_URL=http://localhost:8081 npm start`.
+
+Stop everything with `docker compose down` in `backend/` (add `-v` to also delete the data).
+
 See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md) for details.
 
 ---
