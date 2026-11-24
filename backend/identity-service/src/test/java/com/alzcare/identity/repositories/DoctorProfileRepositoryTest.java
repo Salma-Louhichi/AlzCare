@@ -29,7 +29,7 @@ class DoctorProfileRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        doctorProfileRepository.deleteAll();
+        doctorProfileRepository.deleteAllInBatch();
     }
 
     private DoctorProfile createDoctorProfile(UUID userId, String firstName, String lastName, 
@@ -52,7 +52,7 @@ class DoctorProfileRepositoryTest {
         DoctorProfile doctor = createDoctorProfile(userId, "Dr. Sarah", "Johnson", "Neurology", "MD-NEURO-789");
 
         // When
-        DoctorProfile saved = doctorProfileRepository.save(doctor);
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(doctor);
 
         // Then
         assertThat(saved.getId()).isNotNull();
@@ -67,7 +67,7 @@ class DoctorProfileRepositoryTest {
     void shouldFindDoctorByUserIdWhenExists() {
         // Given
         UUID userId = UUID.randomUUID();
-        DoctorProfile saved = doctorProfileRepository.save(createDoctorProfile(userId, "Dr. Test", "Doctor", "Cardiology", "MD-001"));
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(createDoctorProfile(userId, "Dr. Test", "Doctor", "Cardiology", "MD-001"));
 
         // When
         Optional<DoctorProfile> found = doctorProfileRepository.findByUserId(userId);
@@ -93,7 +93,7 @@ class DoctorProfileRepositoryTest {
     void shouldFindDoctorByLicenseNumberWhenExists() {
         // Given
         UUID userId = UUID.randomUUID();
-        DoctorProfile saved = doctorProfileRepository.save(createDoctorProfile(userId, "Dr. Test", "Doctor", "Neurology", "LICENSE-123"));
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(createDoctorProfile(userId, "Dr. Test", "Doctor", "Neurology", "LICENSE-123"));
 
         // When
         Optional<DoctorProfile> found = doctorProfileRepository.findByLicenseNumber("LICENSE-123");
@@ -119,7 +119,7 @@ class DoctorProfileRepositoryTest {
     void shouldVerifyUniqueConstraintOnUserId() {
         // Given
         UUID duplicateUserId = UUID.randomUUID();
-        doctorProfileRepository.save(createDoctorProfile(duplicateUserId, "Dr. First", "Doctor", "Cardiology", "MD-001"));
+        doctorProfileRepository.saveAndFlush(createDoctorProfile(duplicateUserId, "Dr. First", "Doctor", "Cardiology", "MD-001"));
         
         DoctorProfile duplicate = new DoctorProfile();
         duplicate.setUserId(duplicateUserId); // Same user ID
@@ -141,7 +141,7 @@ class DoctorProfileRepositoryTest {
         // Given
         UUID userId1 = UUID.randomUUID();
         UUID userId2 = UUID.randomUUID();
-        doctorProfileRepository.save(createDoctorProfile(userId1, "Dr. First", "Doctor", "Cardiology", "UNIQUE-LICENSE"));
+        doctorProfileRepository.saveAndFlush(createDoctorProfile(userId1, "Dr. First", "Doctor", "Cardiology", "UNIQUE-LICENSE"));
         
         DoctorProfile duplicateLicense = new DoctorProfile();
         duplicateLicense.setUserId(userId2);
@@ -162,13 +162,13 @@ class DoctorProfileRepositoryTest {
     void shouldUpdateDoctorProfile() {
         // Given
         UUID userId = UUID.randomUUID();
-        DoctorProfile saved = doctorProfileRepository.save(createDoctorProfile(userId, "Dr. Original", "Name", "Cardiology", "MD-UPD"));
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(createDoctorProfile(userId, "Dr. Original", "Name", "Cardiology", "MD-UPD"));
         UUID id = saved.getId();
 
         // When
         saved.setSpeciality("Geriatrics");
         saved.setLicenseNumber("MD-GERI-123");
-        DoctorProfile updated = doctorProfileRepository.save(saved);
+        DoctorProfile updated = doctorProfileRepository.saveAndFlush(saved);
 
         // Then
         Optional<DoctorProfile> found = doctorProfileRepository.findById(id);
@@ -182,7 +182,7 @@ class DoctorProfileRepositoryTest {
     void shouldDeleteDoctorProfile() {
         // Given
         UUID userId = UUID.randomUUID();
-        DoctorProfile saved = doctorProfileRepository.save(createDoctorProfile(userId, "Dr. Delete", "Me", "Cardiology", "MD-DEL"));
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(createDoctorProfile(userId, "Dr. Delete", "Me", "Cardiology", "MD-DEL"));
         UUID id = saved.getId();
 
         // When
@@ -204,7 +204,7 @@ class DoctorProfileRepositoryTest {
         doctor.setContact("doctor@example.com");
         doctor.setAddress("123 Medical Center Drive, Suite 100");
         
-        DoctorProfile saved = doctorProfileRepository.save(doctor);
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(doctor);
 
         // When
         Optional<DoctorProfile> found = doctorProfileRepository.findById(saved.getId());
@@ -225,7 +225,7 @@ class DoctorProfileRepositoryTest {
         DoctorProfile doctor = createDoctorProfile(userId, "Dr. Available", "Test", "Neurology", "MD-AVAIL");
         doctor.setIsAvailable(false);
         
-        DoctorProfile saved = doctorProfileRepository.save(doctor);
+        DoctorProfile saved = doctorProfileRepository.saveAndFlush(doctor);
 
         // When
         Optional<DoctorProfile> found = doctorProfileRepository.findById(saved.getId());

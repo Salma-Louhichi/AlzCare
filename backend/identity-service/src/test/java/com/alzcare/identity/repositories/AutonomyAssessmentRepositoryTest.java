@@ -1,5 +1,7 @@
 package com.alzcare.identity.repositories;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import com.alzcare.identity.entities.AutonomyAssessment;
 import com.alzcare.identity.entities.PatientProfile;
 import com.alzcare.identity.enums.AutonomyLevel;
@@ -37,12 +39,15 @@ class AutonomyAssessmentRepositoryTest {
     @Autowired
     private PatientProfileRepository patientProfileRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private PatientProfile patient;
 
     @BeforeEach
     void setUp() {
-        autonomyAssessmentRepository.deleteAll();
-        patientProfileRepository.deleteAll();
+        autonomyAssessmentRepository.deleteAllInBatch();
+        patientProfileRepository.deleteAllInBatch();
 
         patient = new PatientProfile();
         patient.setUserId(UUID.nameUUIDFromBytes("patient-assessment-123".getBytes()));
@@ -52,7 +57,7 @@ class AutonomyAssessmentRepositoryTest {
         patient.setGender(GenderEnum.MALE);
         patient.setPreferredLanguage(LanguageEnum.ENGLISH);
         patient.setIsActive(true);
-        patient = patientProfileRepository.save(patient);
+        patient = patientProfileRepository.saveAndFlush(patient);
     }
 
     private AutonomyAssessment createAssessment(AutonomyLevel hygiene, AutonomyLevel medication, 
@@ -81,7 +86,7 @@ class AutonomyAssessmentRepositoryTest {
         assessment.setNotes("Patient shows good progress");
 
         // When
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
 
         // Then
         assertThat(saved.getId()).isNotNull();
@@ -93,7 +98,7 @@ class AutonomyAssessmentRepositoryTest {
     @DisplayName("Should calculate overall score correctly")
     void shouldCalculateOverallScoreCorrectly() {
         // Given - INDEPENDENT(3) + ASSISTED(2) + DEPENDENT(1) + INDEPENDENT(3) = 9
-        // Score = (9/12) * 100 = 75%
+        // Score on the 1-10 scale = 1 + (9 - 4) * 9 / 8 = 6
         AutonomyAssessment assessment = createAssessment(
                 AutonomyLevel.INDEPENDENT, AutonomyLevel.ASSISTED,
                 AutonomyLevel.DEPENDENT, AutonomyLevel.INDEPENDENT,
@@ -101,16 +106,16 @@ class AutonomyAssessmentRepositoryTest {
         );
 
         // When
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
 
         // Then
-        assertThat(saved.getOverallScore()).isEqualTo(75);
+        assertThat(saved.getOverallScore()).isEqualTo(6);
     }
 
     @Test
     @DisplayName("Should calculate maximum score for all independent")
     void shouldCalculateMaximumScoreForAllIndependent() {
-        // Given - All INDEPENDENT = 12 points = 100%
+        // Given - All INDEPENDENT = 12 points = maximum score 10
         AutonomyAssessment assessment = createAssessment(
                 AutonomyLevel.INDEPENDENT, AutonomyLevel.INDEPENDENT,
                 AutonomyLevel.INDEPENDENT, AutonomyLevel.INDEPENDENT,
@@ -118,16 +123,16 @@ class AutonomyAssessmentRepositoryTest {
         );
 
         // When
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
 
         // Then
-        assertThat(saved.getOverallScore()).isEqualTo(100);
+        assertThat(saved.getOverallScore()).isEqualTo(10);
     }
 
     @Test
     @DisplayName("Should calculate minimum score for all dependent")
     void shouldCalculateMinimumScoreForAllDependent() {
-        // Given - All DEPENDENT = 4 points = 33%
+        // Given - All DEPENDENT = 4 points = minimum score 1
         AutonomyAssessment assessment = createAssessment(
                 AutonomyLevel.DEPENDENT, AutonomyLevel.DEPENDENT,
                 AutonomyLevel.DEPENDENT, AutonomyLevel.DEPENDENT,
@@ -135,10 +140,10 @@ class AutonomyAssessmentRepositoryTest {
         );
 
         // When
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
 
         // Then
-        assertThat(saved.getOverallScore()).isEqualTo(33);
+        assertThat(saved.getOverallScore()).isEqualTo(1);
     }
 
     @Test
@@ -157,8 +162,8 @@ class AutonomyAssessmentRepositoryTest {
                 "Dr. Johnson", OffsetDateTime.now()
         );
 
-        autonomyAssessmentRepository.save(assessment1);
-        autonomyAssessmentRepository.save(assessment2);
+        autonomyAssessmentRepository.saveAndFlush(assessment1);
+        autonomyAssessmentRepository.saveAndFlush(assessment2);
 
         // When
         List<AutonomyAssessment> assessments = autonomyAssessmentRepository.findByPatient_Id(patient.getId());
@@ -196,8 +201,8 @@ class AutonomyAssessmentRepositoryTest {
                 "Dr. Recent", OffsetDateTime.now()
         );
 
-        autonomyAssessmentRepository.save(oldAssessment);
-        autonomyAssessmentRepository.save(recentAssessment);
+        autonomyAssessmentRepository.saveAndFlush(oldAssessment);
+        autonomyAssessmentRepository.saveAndFlush(recentAssessment);
 
         // When
         Optional<AutonomyAssessment> latest = autonomyAssessmentRepository
@@ -206,7 +211,7 @@ class AutonomyAssessmentRepositoryTest {
         // Then
         assertThat(latest).isPresent();
         assertThat(latest.get().getAssessedBy()).isEqualTo(UUID.nameUUIDFromBytes("Dr. Recent".getBytes()));
-        assertThat(latest.get().getOverallScore()).isEqualTo(100);
+        assertThat(latest.get().getOverallScore()).isEqualTo(10);
     }
 
     @Test
@@ -256,11 +261,13 @@ class AutonomyAssessmentRepositoryTest {
                 AutonomyLevel.ASSISTED, AutonomyLevel.ASSISTED,
                 "Dr. Smith", OffsetDateTime.now()
         );
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
         UUID assessmentId = saved.getId();
 
-        // When
+        // When - the database cascades the delete (ON DELETE CASCADE)
         patientProfileRepository.deleteById(patient.getId());
+        patientProfileRepository.flush();
+        entityManager.clear(); // read from the database, not the persistence context
 
         // Then
         Optional<AutonomyAssessment> found = autonomyAssessmentRepository.findById(assessmentId);
@@ -277,13 +284,14 @@ class AutonomyAssessmentRepositoryTest {
                 "Dr. Smith", OffsetDateTime.now()
         );
         assessment.setNotes("Initial assessment");
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
         UUID id = saved.getId();
+        int initialScore = saved.getOverallScore();
 
         // When
         saved.setHygieneLevel(AutonomyLevel.INDEPENDENT);
         saved.setNotes("Updated assessment - patient improved");
-        AutonomyAssessment updated = autonomyAssessmentRepository.save(saved);
+        AutonomyAssessment updated = autonomyAssessmentRepository.saveAndFlush(saved);
 
         // Then
         Optional<AutonomyAssessment> found = autonomyAssessmentRepository.findById(id);
@@ -291,7 +299,7 @@ class AutonomyAssessmentRepositoryTest {
         assertThat(found.get().getHygieneLevel()).isEqualTo(AutonomyLevel.INDEPENDENT);
         assertThat(found.get().getNotes()).isEqualTo("Updated assessment - patient improved");
         // Score should be recalculated
-        assertThat(found.get().getOverallScore()).isGreaterThan(saved.getOverallScore());
+        assertThat(found.get().getOverallScore()).isGreaterThan(initialScore);
     }
 
     @Test
@@ -312,7 +320,7 @@ class AutonomyAssessmentRepositoryTest {
         assessment.setNotes(longNotes);
 
         // When
-        AutonomyAssessment saved = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment saved = autonomyAssessmentRepository.saveAndFlush(assessment);
 
         // Then
         Optional<AutonomyAssessment> found = autonomyAssessmentRepository.findById(saved.getId());

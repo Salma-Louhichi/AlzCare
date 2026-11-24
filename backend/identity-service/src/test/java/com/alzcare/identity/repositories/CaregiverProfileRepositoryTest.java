@@ -29,7 +29,7 @@ class CaregiverProfileRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        caregiverProfileRepository.deleteAll();
+        caregiverProfileRepository.deleteAllInBatch();
     }
 
     private CaregiverProfile createCaregiverProfile(UUID userId, String firstName, String lastName) {
@@ -53,7 +53,7 @@ class CaregiverProfileRepositoryTest {
         CaregiverProfile caregiver = createCaregiverProfile(userId, "Maria", "Garcia");
 
         // When
-        CaregiverProfile saved = caregiverProfileRepository.save(caregiver);
+        CaregiverProfile saved = caregiverProfileRepository.saveAndFlush(caregiver);
 
         // Then
         assertThat(saved.getId()).isNotNull();
@@ -68,7 +68,7 @@ class CaregiverProfileRepositoryTest {
     void shouldFindCaregiverByUserIdWhenExists() {
         // Given
         UUID userId = UUID.fromString("550e8400-e29b-41d4-a716-446655440002");
-        CaregiverProfile saved = caregiverProfileRepository.save(createCaregiverProfile(userId, "Test", "Caregiver"));
+        CaregiverProfile saved = caregiverProfileRepository.saveAndFlush(createCaregiverProfile(userId, "Test", "Caregiver"));
 
         // When
         Optional<CaregiverProfile> found = caregiverProfileRepository.findByUserId(userId);
@@ -94,7 +94,7 @@ class CaregiverProfileRepositoryTest {
     void shouldVerifyUniqueConstraintOnUserId() {
         // Given
         UUID userId = UUID.fromString("550e8400-e29b-41d4-a716-446655440003");
-        caregiverProfileRepository.save(createCaregiverProfile(userId, "First", "Caregiver"));
+        caregiverProfileRepository.saveAndFlush(createCaregiverProfile(userId, "First", "Caregiver"));
         
         CaregiverProfile duplicate = new CaregiverProfile();
         duplicate.setUserId(userId); // Same user ID
@@ -114,14 +114,14 @@ class CaregiverProfileRepositoryTest {
     void shouldUpdateCaregiverProfile() {
         // Given
         UUID userId = UUID.fromString("550e8400-e29b-41d4-a716-446655440004");
-        CaregiverProfile saved = caregiverProfileRepository.save(createCaregiverProfile(userId, "Original", "Name"));
+        CaregiverProfile saved = caregiverProfileRepository.saveAndFlush(createCaregiverProfile(userId, "Original", "Name"));
         UUID id = saved.getId();
 
         // When
         saved.setPhone("+9998887777");
         saved.setAddress("456 New St");
         saved.setIsProfessional(true);
-        CaregiverProfile updated = caregiverProfileRepository.save(saved);
+        CaregiverProfile updated = caregiverProfileRepository.saveAndFlush(saved);
 
         // Then
         Optional<CaregiverProfile> found = caregiverProfileRepository.findById(id);
@@ -136,7 +136,7 @@ class CaregiverProfileRepositoryTest {
     void shouldDeleteCaregiverProfile() {
         // Given
         UUID userId = UUID.fromString("550e8400-e29b-41d4-a716-446655440005");
-        CaregiverProfile saved = caregiverProfileRepository.save(createCaregiverProfile(userId, "Delete", "Me"));
+        CaregiverProfile saved = caregiverProfileRepository.saveAndFlush(createCaregiverProfile(userId, "Delete", "Me"));
         UUID id = saved.getId();
 
         // When
@@ -159,7 +159,7 @@ class CaregiverProfileRepositoryTest {
         minimalCaregiver.setIsProfessional(false);
 
         // When
-        CaregiverProfile saved = caregiverProfileRepository.save(minimalCaregiver);
+        CaregiverProfile saved = caregiverProfileRepository.saveAndFlush(minimalCaregiver);
 
         // Then
         Optional<CaregiverProfile> found = caregiverProfileRepository.findById(saved.getId());
@@ -175,7 +175,7 @@ class CaregiverProfileRepositoryTest {
     void shouldFindCaregiverByIdWhenExists() {
         // Given
         UUID userId = UUID.fromString("550e8400-e29b-41d4-a716-446655440007");
-        CaregiverProfile saved = caregiverProfileRepository.save(createCaregiverProfile(userId, "ID", "Test"));
+        CaregiverProfile saved = caregiverProfileRepository.saveAndFlush(createCaregiverProfile(userId, "ID", "Test"));
         UUID id = saved.getId();
 
         // When

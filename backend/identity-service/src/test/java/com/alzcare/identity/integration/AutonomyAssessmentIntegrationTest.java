@@ -1,5 +1,15 @@
 package com.alzcare.identity.integration;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+import com.alzcare.identity.repositories.AutonomyAssessmentRepository;
+import com.alzcare.identity.repositories.PatientProfileRepository;
+import com.alzcare.identity.services.KeycloakRealmUserService;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import com.alzcare.identity.dtos.requests.AutonomyAssessmentRequest;
 import com.alzcare.identity.dtos.requests.PatientCreateRequest;
 import com.alzcare.identity.dtos.responses.AutonomyAssessmentResponse;
@@ -33,6 +43,24 @@ class AutonomyAssessmentIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private PatientProfileRepository patientProfileRepository;
+
+    @Autowired
+    private AutonomyAssessmentRepository autonomyAssessmentRepository;
+
+    /** No Keycloak in tests: every profile's user is treated as existing in the realm. */
+    @MockBean
+    private KeycloakRealmUserService keycloakRealmUserService;
+
+    @BeforeEach
+    void stubKeycloakAndCleanDatabase() {
+        when(keycloakRealmUserService.existsInRealm(anyString())).thenReturn(true);
+        // These tests commit through the real HTTP stack, so remove rows left by other test classes
+        autonomyAssessmentRepository.deleteAllInBatch();
+        patientProfileRepository.deleteAllInBatch();
+    }
 
     private PatientCreateRequest createPatientRequest(UUID userId, String firstName, String lastName) {
         PatientCreateRequest request = new PatientCreateRequest();
@@ -247,7 +275,7 @@ class AutonomyAssessmentIntegrationTest {
         assertThat(patientResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         UUID patientId = patientResponse.getBody().getId();
 
-        // Create assessment with all INDEPENDENT = 100%
+        // Create assessment with all INDEPENDENT = maximum score 10
         UUID assessedById = UUID.fromString("550e8400-e29b-41d4-a716-446655440030");
         AutonomyAssessmentRequest assessmentRequest = createAssessmentRequest(
                 AutonomyLevel.INDEPENDENT, AutonomyLevel.INDEPENDENT, AutonomyLevel.INDEPENDENT, AutonomyLevel.INDEPENDENT,
@@ -261,11 +289,11 @@ class AutonomyAssessmentIntegrationTest {
                 AutonomyAssessmentResponse.class
         );
 
-        // Then - Verify 100% score
+        // Then - Verify maximum score
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody().getOverallScore()).isEqualTo(100);
+        assertThat(response.getBody().getOverallScore()).isEqualTo(10);
 
-        // Create assessment with all DEPENDENT = 33%
+        // Create assessment with all DEPENDENT = minimum score 1
         AutonomyAssessmentRequest lowAssessmentRequest = createAssessmentRequest(
                 AutonomyLevel.DEPENDENT, AutonomyLevel.DEPENDENT, AutonomyLevel.DEPENDENT, AutonomyLevel.DEPENDENT,
                 assessedById, LocalDate.now().minusDays(1)
@@ -278,7 +306,7 @@ class AutonomyAssessmentIntegrationTest {
         );
 
         assertThat(lowResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(lowResponse.getBody().getOverallScore()).isEqualTo(33);
+        assertThat(lowResponse.getBody().getOverallScore()).isEqualTo(1);
     }
 
     @Test
@@ -346,9 +374,11 @@ class AutonomyAssessmentIntegrationTest {
         String invalidJson = "{\"hygieneLevel\":\"INDEPENDENT\"}";
 
         // When - Try to create with invalid data
+        HttpHeaders jsonHeaders = new HttpHeaders();
+        jsonHeaders.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<String> response = restTemplate.postForEntity(
                 "/api/v1/patients/" + patientId + "/autonomy",
-                invalidJson,
+                new HttpEntity<>(invalidJson, jsonHeaders),
                 String.class
         );
 

@@ -33,7 +33,7 @@ class PatientProfileRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        patientProfileRepository.deleteAll();
+        patientProfileRepository.deleteAllInBatch();
     }
 
     private PatientProfile createPatientProfile(UUID userId, String firstName, String lastName, boolean isActive) {
@@ -55,7 +55,7 @@ class PatientProfileRepositoryTest {
         PatientProfile patient = createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"), "John", "Doe", true);
 
         // When
-        PatientProfile saved = patientProfileRepository.save(patient);
+        PatientProfile saved = patientProfileRepository.saveAndFlush(patient);
 
         // Then
         assertThat(saved.getId()).isNotNull();
@@ -69,7 +69,7 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should find patient by Keycloak ID when exists")
     void shouldFindPatientByKeycloakIdWhenExists() {
         // Given
-        PatientProfile saved = patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"), "John", "Doe", true));
+        PatientProfile saved = patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"), "John", "Doe", true));
 
         // When
         Optional<PatientProfile> found = patientProfileRepository.findByUserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"));
@@ -94,8 +94,8 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should find all active patients")
     void shouldFindAllActivePatients() {
         // Given
-        patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440003"), "Active", "Patient", true));
-        patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440004"), "Inactive", "Patient", false));
+        patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440003"), "Active", "Patient", true));
+        patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440004"), "Inactive", "Patient", false));
 
         // When
         List<PatientProfile> activePatients = patientProfileRepository.findByIsActive(true);
@@ -109,8 +109,8 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should find all inactive patients")
     void shouldFindAllInactivePatients() {
         // Given
-        patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440005"), "Active", "Patient", true));
-        patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"), "Inactive", "Patient", false));
+        patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440005"), "Active", "Patient", true));
+        patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"), "Inactive", "Patient", false));
 
         // When
         List<PatientProfile> inactivePatients = patientProfileRepository.findByIsActive(false);
@@ -124,13 +124,13 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should update patient profile")
     void shouldUpdatePatientProfile() {
         // Given
-        PatientProfile saved = patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440007"), "Original", "Name", true));
+        PatientProfile saved = patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440007"), "Original", "Name", true));
         UUID id = saved.getId();
 
         // When
         saved.setFirstName("Updated");
         saved.setLastName("NameChanged");
-        PatientProfile updated = patientProfileRepository.save(saved);
+        PatientProfile updated = patientProfileRepository.saveAndFlush(saved);
 
         // Then
         Optional<PatientProfile> found = patientProfileRepository.findById(id);
@@ -143,7 +143,7 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should delete patient profile")
     void shouldDeletePatientProfile() {
         // Given
-        PatientProfile saved = patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440008"), "Delete", "Me", true));
+        PatientProfile saved = patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440008"), "Delete", "Me", true));
         UUID id = saved.getId();
 
         // When
@@ -158,7 +158,7 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should verify unique constraint on keycloak_id")
     void shouldVerifyUniqueConstraintOnKeycloakId() {
         // Given
-        patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440009"), "First", "Patient", true));
+        patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440009"), "First", "Patient", true));
 
         PatientProfile duplicate = new PatientProfile();
         duplicate.setUserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440009")); // Same user ID
@@ -195,7 +195,7 @@ class PatientProfileRepositoryTest {
     @DisplayName("Should find patient by ID when exists")
     void shouldFindPatientByIdWhenExists() {
         // Given
-        PatientProfile saved = patientProfileRepository.save(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440010"), "ID", "Test", true));
+        PatientProfile saved = patientProfileRepository.saveAndFlush(createPatientProfile(UUID.fromString("550e8400-e29b-41d4-a716-446655440010"), "ID", "Test", true));
         UUID id = saved.getId();
 
         // When

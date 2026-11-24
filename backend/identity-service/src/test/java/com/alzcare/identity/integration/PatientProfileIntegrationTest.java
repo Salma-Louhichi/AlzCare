@@ -1,5 +1,12 @@
 package com.alzcare.identity.integration;
 
+import com.alzcare.identity.repositories.AutonomyAssessmentRepository;
+import com.alzcare.identity.repositories.PatientProfileRepository;
+import com.alzcare.identity.services.KeycloakRealmUserService;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import com.alzcare.identity.dtos.requests.PatientCreateRequest;
 import com.alzcare.identity.dtos.requests.PatientUpdateRequest;
 import com.alzcare.identity.dtos.responses.PatientProfileResponse;
@@ -32,6 +39,24 @@ class PatientProfileIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private PatientProfileRepository patientProfileRepository;
+
+    @Autowired
+    private AutonomyAssessmentRepository autonomyAssessmentRepository;
+
+    /** No Keycloak in tests: every profile's user is treated as existing in the realm. */
+    @MockBean
+    private KeycloakRealmUserService keycloakRealmUserService;
+
+    @BeforeEach
+    void stubKeycloakAndCleanDatabase() {
+        when(keycloakRealmUserService.existsInRealm(anyString())).thenReturn(true);
+        // These tests commit through the real HTTP stack, so remove rows left by other test classes
+        autonomyAssessmentRepository.deleteAllInBatch();
+        patientProfileRepository.deleteAllInBatch();
+    }
 
     private PatientCreateRequest createPatientRequest(UUID userId, String firstName, String lastName) {
         PatientCreateRequest request = new PatientCreateRequest();
