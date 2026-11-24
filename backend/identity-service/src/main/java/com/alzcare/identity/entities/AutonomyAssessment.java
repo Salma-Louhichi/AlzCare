@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -36,18 +38,22 @@ public class AutonomyAssessment {
     private PatientProfile patient;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // PostgreSQL enum type autonomy_level
     @Column(name = "hygiene_level", nullable = false, columnDefinition = "autonomy_level")
     private AutonomyLevel hygieneLevel;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // PostgreSQL enum type autonomy_level
     @Column(name = "medication_level", nullable = false, columnDefinition = "autonomy_level")
     private AutonomyLevel medicationLevel;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // PostgreSQL enum type autonomy_level
     @Column(name = "mobility_level", nullable = false, columnDefinition = "autonomy_level")
     private AutonomyLevel mobilityLevel;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // PostgreSQL enum type autonomy_level
     @Column(name = "feeding_level", nullable = false, columnDefinition = "autonomy_level")
     private AutonomyLevel feedingLevel;
 
@@ -82,8 +88,10 @@ public class AutonomyAssessment {
             sum += getLevelValue(medicationLevel);
             sum += getLevelValue(mobilityLevel);
             sum += getLevelValue(feedingLevel);
-            // Map 4-12 to 1-10 scale
-            this.overallScore = (sum - 4) * 10 / 8 + 1;
+            // Map 4-12 to the 1-10 scale enforced by the overall_score CHECK constraint.
+            // (The previous formula, (sum - 4) * 10 / 8 + 1, produced 11 for an all-INDEPENDENT
+            // assessment, which the database rejected.)
+            this.overallScore = 1 + (sum - 4) * 9 / 8;
         }
     }
 
