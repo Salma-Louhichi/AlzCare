@@ -112,33 +112,21 @@ public class NotificationScheduleController {
 
         Page<ScheduledNotificationRule> rules;
 
-        if (targetRole != null && active != null) {
-            rules = scheduleRepository.findAll(
-                    Example.of(
-                            ScheduledNotificationRule.builder()
-                                    .targetRole(targetRole)
-                                    .active(active)
-                                    .build(),
-                            ExampleMatcher.matching().withIgnoreNullValues()
-                    ), pageable);
-        } else if (targetRole != null) {
-            rules = scheduleRepository.findAll(
-                    Example.of(
-                            ScheduledNotificationRule.builder()
-                                    .targetRole(targetRole)
-                                    .build(),
-                            ExampleMatcher.matching().withIgnoreNullValues()
-                    ), pageable);
-        } else if (active != null) {
-            rules = scheduleRepository.findAll(
-                    Example.of(
-                            ScheduledNotificationRule.builder()
-                                    .active(active)
-                                    .build(),
-                            ExampleMatcher.matching().withIgnoreNullValues()
-                    ), pageable);
-        } else {
+        if (targetRole == null && active == null) {
             rules = scheduleRepository.findAll(pageable);
+        } else {
+            // 'active' is a primitive boolean, so a probe always carries a value for it (false by
+            // default) and withIgnoreNullValues() cannot skip it. Ignore the path explicitly unless
+            // the caller filters on it - otherwise a role-only filter returned inactive schedules only.
+            ScheduledNotificationRule probe = ScheduledNotificationRule.builder()
+                    .targetRole(targetRole)
+                    .active(Boolean.TRUE.equals(active))
+                    .build();
+            ExampleMatcher matcher = ExampleMatcher.matching().withIgnoreNullValues();
+            if (active == null) {
+                matcher = matcher.withIgnorePaths("active");
+            }
+            rules = scheduleRepository.findAll(Example.of(probe, matcher), pageable);
         }
 
         return ResponseEntity.ok(rules.map(this::mapToResponse));
