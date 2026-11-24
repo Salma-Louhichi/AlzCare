@@ -72,3 +72,14 @@ def test_missing_artifact_is_reported(tmp_path):
     from app.model import ModelNotAvailableError
     with pytest.raises(ModelNotAvailableError):
         RiskModel(tmp_path)
+
+
+def test_explanations_never_repeat_a_label(model):
+    single = model.predict(_features(has_previous=False, score_change=0, months_since_previous=0))
+    labels = [f.label for f in single.top_factors]
+    assert len(labels) == len(set(labels))
+
+
+def test_stable_score_is_described_in_words(model):
+    result = model.predict(_features(age_years=70, score_change=0), top_n=8)
+    assert any(f.label == "Overall score unchanged since the previous assessment" for f in result.top_factors)

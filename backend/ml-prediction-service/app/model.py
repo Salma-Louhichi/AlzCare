@@ -57,16 +57,22 @@ class RiskModel:
         # (relative to an average patient of the training data).
         contributions = self._coef * self._scaler.transform(x)[0]
         order = np.argsort(-np.abs(contributions))
-        factors = [
-            RiskFactor(
+        factors: list[RiskFactor] = []
+        seen_labels: set[str] = set()
+        for i in order:
+            label = _label(FEATURE_NAMES[i], features)
+            # Without a previous assessment, the three trend features describe the same fact
+            if abs(contributions[i]) < 0.01 or label in seen_labels:
+                continue
+            seen_labels.add(label)
+            factors.append(RiskFactor(
                 feature=FEATURE_NAMES[i],
-                label=_label(FEATURE_NAMES[i], features),
+                label=label,
                 impact=round(float(contributions[i]), 3),
                 direction="increases risk" if contributions[i] > 0 else "decreases risk",
-            )
-            for i in order[:top_n]
-            if abs(contributions[i]) >= 0.01
-        ]
+            ))
+            if len(factors) == top_n:
+                break
         levels = [LEVEL_VALUE[getattr(features, f"{a}_level")] for a in ("hygiene", "medication", "mobility", "feeding")]
         return Explained(
             probability=round(probability, 4),
@@ -82,14 +88,14 @@ def _label(feature: str, f: RiskFeatures) -> str:
     if feature in ("hygiene", "medication", "mobility", "feeding"):
         level = getattr(f, f"{feature}_level").value.lower()
         return f"{feature.capitalize()}: {level}"
+    if feature in ("score_change", "months_since_previous", "has_previous") and not f.has_previous:
+        return "Only one assessment recorded (no trend yet)"
     if feature == "score_change":
-        if not f.has_previous:
-            return "No earlier assessment to compare"
+        if f.score_change == 0:
+            return "Overall score unchanged since the previous assessment"
         return f"Overall score changed by {f.score_change:+d} since the previous assessment"
     if feature == "months_since_previous":
-        if not f.has_previous:
-            return "No earlier assessment to compare"
         return f"{f.months_since_previous:.1f} months between the last two assessments"
     if feature == "has_previous":
-        return "Previous assessment available" if f.has_previous else "Only one assessment recorded"
+        return "Previous assessment available for comparison"
     return feature
