@@ -337,7 +337,7 @@
   "userManagedAccessAllowed": false,
   "users": [
     {
-      "id": "admin-user",
+      "id": "a0000000-0000-4000-8000-000000000001",
       "username": "admin",
       "enabled": true,
       "emailVerified": true,
@@ -358,7 +358,7 @@
       }
     },
     {
-      "id": "doctor-user",
+      "id": "d0000000-0000-4000-8000-000000000002",
       "username": "doctor",
       "enabled": true,
       "emailVerified": true,
@@ -380,7 +380,7 @@
       }
     },
     {
-      "id": "caregiver-user",
+      "id": "c0000000-0000-4000-8000-000000000003",
       "username": "caregiver",
       "enabled": true,
       "emailVerified": true,
@@ -402,7 +402,7 @@
       }
     },
     {
-      "id": "patient-user",
+      "id": "b0000000-0000-4000-8000-000000000004",
       "username": "patient",
       "enabled": true,
       "emailVerified": true,
