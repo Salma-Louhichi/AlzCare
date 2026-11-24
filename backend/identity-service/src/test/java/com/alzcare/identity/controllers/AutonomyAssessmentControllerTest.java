@@ -313,6 +313,21 @@ class AutonomyAssessmentControllerTest {
     // ====================================================================================
 
     @Test
+    @DisplayName("Should return 400 when the body contains a non-UUID assessor (HttpMessageNotReadableException)")
+    void shouldReturn400WhenAssessedByIsNotAUuid() throws Exception {
+        // Keycloak demo users used to have ids like "doctor-user"; this used to answer 500
+        String body = "{\"hygieneLevel\":\"INDEPENDENT\",\"medicationLevel\":\"ASSISTED\","
+                + "\"mobilityLevel\":\"INDEPENDENT\",\"feedingLevel\":\"INDEPENDENT\","
+                + "\"assessedBy\":\"doctor-user\",\"assessmentDate\":\"2026-06-02\"}";
+
+        mockMvc.perform(post("/api/v1/patients/{patientId}/autonomy", patientId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Malformed Request"));
+    }
+
+    @Test
     @DisplayName("Should return 400 when patient ID is not a valid UUID (MethodArgumentTypeMismatchException)")
     void shouldReturn400WhenPatientIdIsNotValidUuid() throws Exception {
         // When & Then - a malformed id is a client error, not a server error

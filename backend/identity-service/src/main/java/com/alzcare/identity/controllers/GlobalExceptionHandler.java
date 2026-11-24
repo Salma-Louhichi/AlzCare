@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -126,6 +127,25 @@ public class GlobalExceptionHandler {
         problemDetail.setType(URI.create(ERROR_URI_BASE + errorType));
         problemDetail.setProperty("timestamp", Instant.now());
         return ResponseEntity.status(status).body(problemDetail);
+    }
+
+    /**
+     * Handles unreadable request bodies (invalid JSON, a non-UUID where a UUID is expected,
+     * an unknown enum value...). These are client errors; without this handler they were
+     * reported as a 500 "Profile Creation Failed".
+     *
+     * @param ex the exception
+     * @return a ProblemDetail response with 400 status
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        Throwable cause = ex.getMostSpecificCause();
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Malformed request body: " + cause.getMessage());
+        problemDetail.setTitle("Malformed Request");
+        problemDetail.setType(URI.create(ERROR_URI_BASE + "malformed-request"));
+        problemDetail.setProperty("timestamp", Instant.now());
+        return ResponseEntity.badRequest().body(problemDetail);
     }
 
     /**
