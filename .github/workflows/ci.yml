@@ -26,6 +26,7 @@ jobs:
           - identity-service
           - notification-service
           - care-team-service
+          - event-ingestion
     defaults:
       run:
         working-directory: backend/${{ matrix.service }}
@@ -79,6 +80,22 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t alzcare/ml-prediction:ci .
+
+  camera-simulator:
+    name: IoT simulator · test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: iot/camera-simulator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: iot/camera-simulator/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pytest
 
   frontend:
     name: Frontend · build
