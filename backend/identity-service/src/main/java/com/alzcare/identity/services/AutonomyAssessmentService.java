@@ -60,7 +60,7 @@ public class AutonomyAssessmentService {
         assessment.setPatient(patient);
         assessment.calculateOverallScore();
 
-        AutonomyAssessment savedAssessment = autonomyAssessmentRepository.save(assessment);
+        AutonomyAssessment savedAssessment = autonomyAssessmentRepository.saveAndFlush(assessment);
         return autonomyAssessmentMapper.toResponse(savedAssessment);
     }
 

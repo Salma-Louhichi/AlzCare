@@ -57,7 +57,7 @@ public class PatientProfileService {
                 });
 
         PatientProfile patientProfile = patientProfileMapper.toEntity(request);
-        PatientProfile savedProfile = patientProfileRepository.save(patientProfile);
+        PatientProfile savedProfile = patientProfileRepository.saveAndFlush(patientProfile);
         return patientProfileMapper.toResponse(savedProfile);
     }
 

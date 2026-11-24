@@ -23,7 +23,10 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AutonomyAssessmentRequest {
 
-    @NotNull(message = "Patient ID is required")
+    /**
+     * Ignored: the patient is taken from the URL ({@code /patients/{patientId}/autonomy}).
+     * Kept optional for backwards compatibility with clients that still send it.
+     */
     private UUID patientId;
 
     @NotNull(message = "Hygiene level is required")

@@ -50,7 +50,7 @@ public class CaregiverProfileService {
                 });
 
         CaregiverProfile caregiverProfile = caregiverProfileMapper.toEntity(request);
-        CaregiverProfile savedProfile = caregiverProfileRepository.save(caregiverProfile);
+        CaregiverProfile savedProfile = caregiverProfileRepository.saveAndFlush(caregiverProfile);
         return caregiverProfileMapper.toResponse(savedProfile);
     }
 
