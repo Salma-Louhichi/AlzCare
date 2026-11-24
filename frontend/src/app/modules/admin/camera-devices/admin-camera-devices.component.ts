@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -7,7 +8,7 @@ import { CameraDeviceService } from '../../../core/services/camera-device.servic
 import { PatientService, PatientProfileResponse } from '../../../core/services/patient.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { CameraDevice, CameraStatus, CameraZone } from '../../../core/models/camera-device.model';
+import { CameraDevice, CameraDeviceRequest, CameraStatus, CameraZone } from '../../../core/models/camera-device.model';
 
 @Component({
   selector: 'app-admin-camera-devices',
@@ -21,6 +22,8 @@ export class AdminCameraDevicesComponent implements OnInit, OnDestroy {
   patients: PatientProfileResponse[] = [];
   selectedPatientId: string = '';
   selectedPatientName: string = '';
+  /** Shown once after pairing - the device key is never returned again. */
+  pairedCredentials: { cameraId: string; deviceKey: string; zone: CameraZone } | null = null;
   
   // Cameras list
   cameras: CameraDevice[] = [];
@@ -101,8 +104,9 @@ export class AdminCameraDevicesComponent implements OnInit, OnDestroy {
   }
 
   onPatientSelect(patientId: string): void {
+    // Cameras are linked to the patient's Keycloak user id, like the rest of the platform
     this.selectedPatientId = patientId;
-    const patient = this.patients.find(p => p.id === patientId);
+    const patient = this.patients.find(p => p.userId === patientId);
     this.selectedPatientName = patient ? `${patient.firstName} ${patient.lastName}` : '';
     
     // Update form patientId
@@ -150,33 +154,42 @@ export class AdminCameraDevicesComponent implements OnInit, OnDestroy {
 
   closePairModal(): void {
     this.showPairModal = false;
+    this.pairedCredentials = null;
     this.pairForm.reset();
   }
 
   onPairSubmit(): void {
-    if (this.pairForm.invalid || !this.currentUserId) return;
-    
+    if (this.pairForm.invalid) return;
+
     this.pairing = true;
-    const request = {
-      ...this.pairForm.value,
-      pairedBy: this.currentUserId
+    const request: CameraDeviceRequest = {
+      patientId: this.selectedPatientId,
+      zone: this.pairForm.value.zone,
+      macAddress: this.pairForm.value.macAddress
     };
-    
+
     this.cameraService.pairCamera(request)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (camera) => {
-          this.toastService.success(`Camera paired successfully for ${camera.zone}`);
+        next: (paired) => {
+          const { deviceKey, ...camera } = paired;
           this.cameras.push(camera);
-          this.closePairModal();
+          // The key is only returned now: keep the modal open to show the device credentials
+          this.pairedCredentials = { cameraId: paired.id, deviceKey, zone: paired.zone };
           this.pairing = false;
         },
-        error: (error) => {
-          console.error('Error pairing camera:', error);
-          this.toastService.error('Failed to pair camera');
+        error: (error: HttpErrorResponse) => {
+          this.toastService.error(error.error?.detail || 'Failed to pair camera');
           this.pairing = false;
         }
       });
+  }
+
+  copy(value: string): void {
+    navigator.clipboard?.writeText(value).then(
+      () => this.toastService.success('Copied to clipboard'),
+      () => this.toastService.error('Could not copy')
+    );
   }
 
   onUnpairCamera(cameraId: string): void {
