@@ -141,17 +141,21 @@ export interface AutonomyAssessment {
   medicationLevel: AutonomyLevel;
   mobilityLevel: AutonomyLevel;
   feedingLevel: AutonomyLevel;
-  overallScore: number; // 4-12 calculated
+  overallScore: number; // 1-10, computed by identity-service
+  assessedBy: string;   // Keycloak user id of the assessor
   notes?: string;
-  assessedAt: string;
+  assessmentDate: string; // ISO date (yyyy-MM-dd)
+  createdAt?: string;
 }
 
-// Autonomy Assessment Request
+// Autonomy Assessment Request (the patient comes from the URL)
 export interface AutonomyAssessmentRequest {
   hygieneLevel: AutonomyLevel;
   medicationLevel: AutonomyLevel;
   mobilityLevel: AutonomyLevel;
   feedingLevel: AutonomyLevel;
+  assessedBy: string;
+  assessmentDate: string;
   notes?: string;
 }
 
