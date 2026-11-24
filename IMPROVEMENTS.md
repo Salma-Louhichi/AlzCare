@@ -37,7 +37,8 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | BE-1 | P1 | Backend | `ddl-auto: update/create-drop` instead of migrations outside identity-service | ⏳ Planned |
 | BE-2 | P2 | Backend | Notification polling every 30 s instead of push | ⏳ Planned |
 | BE-3 | P2 | Backend | Email/SMS/push channels are mocks | ⏳ Planned |
-| BE-4 | P2 | Backend | Gateway/compose reference services that are not in the repo | ⏳ 3 left (ML done) |
+| BE-4 | P2 | Backend | Gateway/compose reference services that are not in the repo | ⏳ 2 left (ML, event-ingestion done) |
+| IOT-1 | P2 | IoT | Home monitoring hardening: firmware untested, HTTP, no key rotation, caregiver access | ⏳ Planned |
 | ML-1 | P2 | ML | Care-risk model trained on synthetic data; needs clinical data + validation | ⏳ Planned |
 | OPS-1 | P2 | Backend | Correlation id stops at the gateway | ⏳ Planned |
 
@@ -293,7 +294,18 @@ current schemas, then switch to `validate`.
 - **BE-4 · Missing services.** The gateway rules and compose `full` profile reference
   safety-alert-engine, event-ingestion and community-social-service, but their sources aren't
   in this repo. Add them, or remove their routes so the documentation matches what runs.
-  (`ml-prediction`, the fourth placeholder route, is now implemented: see ML-1.)
+  (`ml-prediction` and `event-ingestion` are now implemented: see ML-1 and IOT-1;
+  safety-alert-engine and community-social-service remain.)
+- **IOT-1 · Home monitoring hardening.** `event-ingestion` (26 tests) receives ESP32 motion
+  events authenticated by per-device keys, detects wandering / night motion / night exit
+  attempts and alerts the care team through RabbitMQ. The flow was verified end to end with the
+  camera simulator. Remaining work:
+  - the ESP32 firmware has not been compiled or run on hardware;
+  - devices talk HTTP, so production needs TLS with a pinned root CA;
+  - there is no device-key rotation endpoint;
+  - caregivers can't see their patient's home monitoring yet, because the read endpoints are
+    restricted to the doctor and admins;
+  - rules are fixed thresholds, not learned per patient.
 - **ML-1 · Care-risk model needs real data.** `ml-prediction-service` (Python/FastAPI, 37 tests,
   CI job) serves an explainable logistic-regression model trained on documented **synthetic**
   data (hold-out ROC-AUC 0.787 vs 0.774 for a gradient-boosting baseline). It verifies the JWT

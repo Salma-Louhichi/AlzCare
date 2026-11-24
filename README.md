@@ -17,9 +17,13 @@ AlzCare/
 │   ├── identity-service/    # Users & profiles, Keycloak admin integration (8001)
 │   ├── notification-service/# Notifications, schedules, RabbitMQ consumer (8004)
 │   ├── care-team-service/   # Care-team assignments, handovers, checklists (8008)
+│   ├── event-ingestion/     # IoT: ESP32 camera events, pattern detection, alerts (8002)
 │   ├── ml-prediction-service/ # Python/FastAPI care-risk model (8094)
 │   └── keycloak-service/    # Keycloak realm configuration (8090)
 ├── frontend/                # Angular 18 standalone app + Tailwind CSS (4200)
+├── iot/
+│   ├── camera-simulator/    # Python CLI replaying camera scenarios (wandering, night exit…)
+│   └── esp32-firmware/      # Reference ESP32 + PIR sketch (not hardware-tested)
 ├── docs/                    # Architecture documentation
 └── IMPROVEMENTS.md          # Engineering review & improvement roadmap
 ```
@@ -44,6 +48,7 @@ AlzCare/
 - **Patient Cases Overview** – Dashboard for monitoring assigned patients
 - **Care Coordination** – Interface for managing patient care plans
 - **Autonomy Assessments** – Record hygiene / medication / mobility / feeding autonomy and follow the 1–10 score over time
+- **Home Monitoring (IoT)** – ESP32 cameras report motion (metadata only); the platform detects wandering, night activity and night exit attempts, alerts the doctor and caregivers, and lets the doctor acknowledge alerts or pause a camera
 - **Care-Risk Estimate (ML)** – Probability that the next assessment shows a decline, with the three main factors explained ([model card](backend/ml-prediction-service/MODEL_CARD.md): demonstration model trained on synthetic data, not clinically validated)
 
 ### Admin Features
@@ -179,6 +184,14 @@ Open http://localhost:4200. In local development the login page offers demo acco
 frontend with `GATEWAY_URL=http://localhost:8081 npm start`.
 
 Stop everything with `docker compose down` in `backend/` (add `-v` to also delete the data).
+
+**Try the home monitoring without hardware** (after creating a patient as the demo doctor):
+
+```bash
+cd iot/camera-simulator && pip install -r requirements.txt
+python simulate.py setup --patient <patient-user-id>   # pairs one simulated camera per room
+python simulate.py run wandering                       # also: night-motion, night-exit, quiet-day
+```
 
 See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md) for details.
 
