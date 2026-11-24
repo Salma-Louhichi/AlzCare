@@ -1,0 +1,51 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  config:
+    import: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:1/unused       # JwtDecoder is mocked in tests
+      client:
+        registration:
+          event-ingestion:
+            provider: keycloak
+            client-id: alzcare-event-ingestion
+            client-secret: test
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: http://localhost:1/unused       # CareTeamClient is mocked in tests
+
+eureka:
+  client:
+    enabled: false
+
+alzcare:
+  services:
+    care-team-url: http://localhost:1
+    identity-url: http://localhost:1
+  notifications:
+    exchange: alert.notifications
+    routing-key: notification.routing.key
+  monitoring:
+    timezone: Africa/Tunis
+    night-start: "22:00"
+    night-end: "06:00"
+    wandering-min-duration: 120m
+    wandering-max-gap: 10m
+    wandering-min-zones: 2
+    wandering-min-events: 6
+    night-motion-min-events: 3
+    night-motion-window: 30m
+    camera-offline-after: 60m
+    max-event-age: 24h
+    max-clock-skew: 5m
