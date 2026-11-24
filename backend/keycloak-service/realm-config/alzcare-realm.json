@@ -267,6 +267,24 @@
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "fullScopeAllowed": true
+    },
+    {
+      "clientId": "alzcare-event-ingestion",
+      "name": "AlzCare Event Ingestion (service account)",
+      "description": "Service identity of event-ingestion: looks up a patient's care team when a camera reports a pattern. Client credentials only.",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "event-ingestion-secret-change-in-production",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "redirectUris": [],
+      "webOrigins": []
     }
   ],
   "clientScopes": [
