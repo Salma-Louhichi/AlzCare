@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+# Trained model artifacts are produced by `python -m training.train` (and in the Docker build)
+app/artifacts/
