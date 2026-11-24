@@ -78,7 +78,8 @@ public class NotificationServiceIntegrationTest {
                 .andExpect(jsonPath("$.message").value("This is a test notification"))
                 .andExpect(jsonPath("$.type").value("ALERT"))
                 .andExpect(jsonPath("$.channel").value("IN_APP"))
-                .andExpect(jsonPath("$.status").value("PENDING"))
+                // The controller routes the notification immediately and returns the reloaded entity
+                .andExpect(jsonPath("$.status").value("DELIVERED"))
                 .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();

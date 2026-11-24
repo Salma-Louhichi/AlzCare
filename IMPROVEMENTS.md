@@ -194,8 +194,32 @@ The tests can't have run for a while, so regressions went unnoticed. **Fix (done
   localhost and sleeps for real scheduler ticks. **Follow-up:** rewrite it with Testcontainers
   and a controllable clock.
 
-Result: identity 30/30 and notification 11/11 web/unit tests pass. Repository and integration
-tests use Testcontainers and run in CI, where Docker is available.
+Result: identity 30/30 and notification 11/11 web/unit tests pass.
+
+**Database-backed tests (run once Docker was available).** Testcontainers 1.19.3 (the Boot 3.2
+default) can't talk to Docker Engine 29, so it was pinned to 1.21.4. Running the identity
+repository and integration tests against a real PostgreSQL for the first time uncovered two
+**production bugs** in `AutonomyAssessment`:
+- the `*_level` columns use the PostgreSQL enum type `autonomy_level` but were bound as VARCHAR.
+  **No assessment could ever be saved.** Fixed with `@JdbcTypeCode(SqlTypes.NAMED_ENUM)`.
+- the score formula produced 11 for an all-INDEPENDENT patient, which violates the
+  `CHECK (overall_score BETWEEN 1 AND 10)` constraint. Fixed: `1 + (sum - 4) * 9 / 8`.
+
+It also found two smaller API issues: create responses returned `createdAt`/`updatedAt` as null
+(fixed with `saveAndFlush`), and the assessment body required a `patientId` that is ignored in
+favour of the URL (now optional). The rest were test-isolation problems (no Keycloak stub,
+leftover rows between classes). **Identity: 141/141 tests pass.**
+
+The notification-service Testcontainers suites found two more **production bugs**:
+- **RabbitMQ events could never be consumed.** No JSON `MessageConverter` was configured, so
+  Spring AMQP used `SimpleMessageConverter`, which only accepts String, byte[] or Serializable.
+  `NotificationEvent` is none of these. The asynchronous "alert → notification" path did not
+  work. Fixed with a `Jackson2JsonMessageConverter` that infers the target type from the listener.
+- **Filtering schedules by role returned only inactive schedules.** The Query-by-Example probe
+  had a primitive `boolean active` (default `false`) that `withIgnoreNullValues()` can't skip.
+  The `active` path is now ignored unless the caller filters on it.
+One more test expected `PENDING` where the API intentionally returns the routed status
+(`DELIVERED`). **Notification: 34/34 pass (2 skipped: the live-scheduler test above).**
 
 ### BLD-3 · No CI
 **Fix (done):** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests:
