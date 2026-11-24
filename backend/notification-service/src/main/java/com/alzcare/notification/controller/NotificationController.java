@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.Comparator;
 
 /**
  * REST controller for notification management operations.
@@ -198,7 +199,9 @@ public class NotificationController {
         
         // Ensure list is sorted by createdAt desc for consistency
         if (cutoffDate == null) {
-            allNotifications.sort((n1, n2) -> n2.getCreatedAt().compareTo(n1.getCreatedAt()));
+            // Null-safe: documents stored before createdAt was always set must not break the list
+            allNotifications.sort(Comparator.comparing(Notification::getCreatedAt,
+                    Comparator.nullsLast(Comparator.reverseOrder())));
         }
         
         // Manual pagination

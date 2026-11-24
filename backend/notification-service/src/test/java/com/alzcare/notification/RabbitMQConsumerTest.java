@@ -92,6 +92,8 @@ public class RabbitMQConsumerTest {
                 .untilAsserted(() -> {
                     List<Notification> notifications = notificationRepository.findByRecipientId(recipientId, org.springframework.data.domain.Pageable.unpaged());
                     assertThat(notifications).isNotEmpty();
+                    // Regression: notifications created from events had no createdAt, which broke listing
+                    assertThat(notifications).allSatisfy(n -> assertThat(n.getCreatedAt()).isNotNull());
                     assertThat(notifications).anyMatch(n -> 
                         n.getTitle() != null && n.getTitle().contains("Fall")
                     );

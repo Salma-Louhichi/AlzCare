@@ -160,6 +160,9 @@ public class NotificationProcessor {
 
         return Notification.builder()
                 .id(UUID.randomUUID().toString())
+                // Set explicitly: Spring Data's @CreatedDate only fills "new" entities, and an entity
+                // with a pre-assigned id is treated as an update, so createdAt would stay null.
+                .createdAt(Instant.now())
                 .recipientId(payload.getRecipientId())
                 .type(type)
                 .channel(channel)
