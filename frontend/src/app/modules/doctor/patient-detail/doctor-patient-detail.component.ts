@@ -11,6 +11,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { NotificationBellComponent } from '../../../shared/components/notification-bell/notification-bell.component';
 import { RoleTheme } from '../../../shared/components/navbar.component';
 import { CareRiskPanelComponent } from './care-risk-panel/care-risk-panel.component';
+import { HomeMonitoringPanelComponent } from './home-monitoring-panel/home-monitoring-panel.component';
 import {
   CaregiverAssignment,
   ChecklistItem,
@@ -26,7 +27,7 @@ import {
 @Component({
   selector: 'app-doctor-patient-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, NotificationBellComponent, CareRiskPanelComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, NotificationBellComponent, CareRiskPanelComponent, HomeMonitoringPanelComponent],
   templateUrl: './doctor-patient-detail.component.html',
   styleUrls: ['./doctor-patient-detail.component.scss']
 })

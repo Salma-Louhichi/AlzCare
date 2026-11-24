@@ -1,0 +1,104 @@
+<div class="bg-white rounded-lg shadow-md p-6 border border-blue-100">
+  <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+    <div>
+      <h3 class="text-lg font-bold text-gray-800">
+        Home monitoring
+        <span *ngIf="state === 'ready' && openAlerts > 0"
+              class="ml-2 align-middle px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold">
+          {{ openAlerts }} open alert{{ openAlerts === 1 ? '' : 's' }}
+        </span>
+      </h3>
+      <p class="text-sm text-gray-600">Behaviour detected from ESP32 home cameras (motion only — no images are stored).</p>
+    </div>
+    <button type="button" class="text-sm text-blue-600 hover:underline" (click)="load()">Refresh</button>
+  </div>
+
+  <div *ngIf="state === 'loading'" class="py-10 text-center text-sm text-gray-500">Loading home monitoring…</div>
+  <div *ngIf="state === 'forbidden'" class="py-10 text-center text-sm text-gray-600">
+    Home monitoring is only available for your own patients.
+  </div>
+  <div *ngIf="state === 'error'" class="py-10 text-center text-sm text-gray-600">
+    The home monitoring service is unavailable right now.
+  </div>
+
+  <div *ngIf="state === 'ready'" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <!-- Alerts -->
+    <div class="lg:col-span-3">
+      <h4 class="font-semibold text-gray-800 mb-3">Alerts (last 30 days)</h4>
+      <div *ngIf="patterns.length === 0" class="rounded-lg border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
+        No risky behaviour detected.
+      </div>
+      <ul class="space-y-3">
+        <li *ngFor="let p of patterns"
+            class="rounded-lg border p-4"
+            [ngClass]="p.status === 'OPEN' ? (p.severity === 'HIGH' ? 'border-rose-200 bg-rose-50/50' : 'border-amber-200 bg-amber-50/50') : 'border-gray-200'">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                      [ngClass]="p.severity === 'HIGH' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'">
+                  {{ p.severity }}
+                </span>
+                <span class="font-semibold text-gray-900">{{ patternLabel(p.type) }}</span>
+              </div>
+              <p class="mt-1 text-sm text-gray-700">
+                {{ p.startedAt | date:'EEE d MMM, HH:mm' }}
+                <ng-container *ngIf="durationMinutes(p) > 1">– {{ p.endedAt | date:'HH:mm' }} ({{ durationMinutes(p) }} min)</ng-container>
+                · {{ zonesText(p.zones) }} · {{ p.eventCount }} event{{ p.eventCount === 1 ? '' : 's' }}
+              </p>
+              <p *ngIf="p.status === 'ACKNOWLEDGED'" class="mt-1 text-xs text-gray-500">
+                Acknowledged {{ p.acknowledgedAt | date:'d MMM, HH:mm' }}
+              </p>
+            </div>
+            <button *ngIf="p.status === 'OPEN'" type="button"
+                    class="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-50"
+                    [disabled]="busyId === p.id"
+                    (click)="acknowledge(p)">
+              Acknowledge
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Cameras + activity -->
+    <div class="lg:col-span-2 space-y-6">
+      <div>
+        <h4 class="font-semibold text-gray-800 mb-3">Cameras</h4>
+        <div *ngIf="cameras.length === 0" class="rounded-lg border border-dashed border-gray-300 py-6 text-center text-sm text-gray-500">
+          No camera paired. An administrator can pair one in Medical › Cameras.
+        </div>
+        <ul class="divide-y divide-gray-100 rounded-lg border border-gray-200" *ngIf="cameras.length > 0">
+          <li *ngFor="let c of cameras" class="flex items-center justify-between gap-2 px-3 py-2.5">
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ zone(c.zone) }}</p>
+              <p class="text-xs text-gray-500">
+                {{ c.lastSeen ? 'Last seen ' + (c.lastSeen | date:'d MMM, HH:mm') : 'Never connected' }}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-xs font-medium" [ngClass]="statusClasses(c.status)">{{ c.status }}</span>
+              <button type="button" class="text-xs text-blue-600 hover:underline disabled:opacity-50"
+                      [disabled]="busyId === c.id" (click)="togglePause(c)">
+                {{ c.status === 'PAUSED' ? 'Resume' : 'Pause' }}
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold text-gray-800 mb-3">Activity, last 24 h</h4>
+        <div *ngIf="activity.length === 0" class="text-sm text-gray-500">No motion recorded.</div>
+        <div *ngFor="let row of activity" class="mb-2">
+          <div class="flex justify-between text-xs text-gray-600 mb-1">
+            <span>{{ zone(row.zone) }}</span><span>{{ row.count }}</span>
+          </div>
+          <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div class="h-full rounded-full bg-blue-500" [style.width.%]="(row.count / maxActivity) * 100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

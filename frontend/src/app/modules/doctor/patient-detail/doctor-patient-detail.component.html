@@ -118,6 +118,9 @@
                          [patientUserId]="patientId"
                          [patientProfileId]="identityProfileId"></app-care-risk-panel>
 
+    <!-- IoT: alerts from home cameras (event-ingestion) -->
+    <app-home-monitoring-panel class="block mb-8" [patientUserId]="patientId"></app-home-monitoring-panel>
+
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Assigned Caregivers Section -->
