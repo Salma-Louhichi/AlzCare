@@ -52,6 +52,34 @@ jobs:
           path: backend/${{ matrix.service }}/target/surefire-reports
           retention-days: 7
 
+  ml-prediction:
+    name: ML service · train + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/ml-prediction-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/ml-prediction-service/requirements*.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      # Trains and evaluates the model exactly as the Docker build does
+      - name: Train model
+        run: python -m training.train
+
+      - name: Run tests
+        run: pytest
+
+      - name: Build Docker image
+        run: docker build -t alzcare/ml-prediction:ci .
+
   frontend:
     name: Frontend · build
     runs-on: ubuntu-latest
