@@ -6,7 +6,8 @@ import { environment } from '../../../environments/environment';
 import {
   CameraDevice,
   CameraDeviceRequest,
-  CameraStatus
+  CameraStatus,
+  CameraPairingResponse
 } from '../models/camera-device.model';
 
 /**
@@ -57,8 +58,8 @@ export class CameraDeviceService {
    * Pair a new camera device to a patient
    * POST /api/cameras/pair
    */
-  pairCamera(request: CameraDeviceRequest): Observable<CameraDevice> {
-    return this.http.post<CameraDevice>(`${this.apiUrl}/pair`, request).pipe(
+  pairCamera(request: CameraDeviceRequest): Observable<CameraPairingResponse> {
+    return this.http.post<CameraPairingResponse>(`${this.apiUrl}/pair`, request).pipe(
       catchError(error => {
         console.error('[CameraDeviceService] Failed to pair camera:', error);
         throw error;

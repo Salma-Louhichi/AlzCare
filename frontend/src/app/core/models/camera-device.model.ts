@@ -30,13 +30,50 @@ export interface CameraDevice {
 }
 
 /**
- * Request to pair a new camera device to a patient
+ * Request to pair a new camera device to a patient.
+ * patientId is the patient's Keycloak user id; the server records the caller as pairedBy.
  */
 export interface CameraDeviceRequest {
   patientId: string;
   macAddress: string;
   zone: CameraZone;
-  pairedBy: string;
+}
+
+/**
+ * Pairing response: the camera plus its device key. The key is returned only once and must be
+ * flashed on the ESP32 (it authenticates its events with X-Device-Id / X-Device-Key).
+ */
+export interface CameraPairingResponse extends CameraDevice {
+  deviceKey: string;
+}
+
+/** A behaviour detected by event-ingestion from camera motion. */
+export type PatternType = 'WANDERING' | 'NIGHT_MOTION' | 'NIGHT_EXIT_ATTEMPT';
+
+export interface DetectedPattern {
+  id: string;
+  patientId: string;
+  type: PatternType;
+  severity: 'MEDIUM' | 'HIGH';
+  status: 'OPEN' | 'ACKNOWLEDGED';
+  startedAt: string;
+  endedAt: string;
+  eventCount: number;
+  zones: CameraZone[];
+  detectedAt: string;
+  notified: boolean;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+}
+
+/** A single motion event reported by a camera (metadata only). */
+export interface MotionEvent {
+  id: string;
+  cameraId: string;
+  zone: CameraZone;
+  occurredAt: string;
+  motionIntensity: number;
+  durationSeconds: number;
 }
 
 /**
