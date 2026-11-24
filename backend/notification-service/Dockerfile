@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build Stage
 # -----------------------------------------------------------------------------
-FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+FROM maven:3.9-eclipse-temurin-17 AS builder
 
 # Set working directory
 WORKDIR /build
@@ -26,7 +26,7 @@ RUN mvn clean package -Dmaven.test.skip=true -B
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime Stage
 # -----------------------------------------------------------------------------
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 # Metadata labels
 LABEL maintainer="AlzCare Team" \
@@ -35,10 +35,12 @@ LABEL maintainer="AlzCare Team" \
       description="Notification management service for AlzCare platform"
 
 # Create non-root user for security
-RUN addgroup -S alzcare && adduser -S alzcare -G alzcare
+RUN groupadd --system alzcare && useradd --system --gid alzcare --no-create-home alzcare
 
 # Install wget for health checks
-RUN apk add --no-cache wget
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
