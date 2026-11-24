@@ -104,5 +104,7 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka-server:8761/eureka/}
   instance:
-    prefer-ip-address: true
+    # Register by Docker hostname, not IP: this container is on two networks and Eureka would
+    # otherwise advertise the database-network address, which the gateway cannot reach.
+    prefer-ip-address: false
     hostname: event-ingestion

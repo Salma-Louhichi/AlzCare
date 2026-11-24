@@ -72,12 +72,12 @@ public class SecurityConfig {
                         // Event Ingestion Service - Camera management (Doctors/Admins)
                         .pathMatchers("/api/cameras").hasAnyRole("DOCTOR", "ADMIN")
                         .pathMatchers("/api/cameras/**").hasAnyRole("DOCTOR", "ADMIN")
-                        // Event Ingestion Service - Activity events (authenticated)
-                        .pathMatchers("/api/events").authenticated()
-                        .pathMatchers("/api/events/**").authenticated()
-                        // Event Ingestion Service - Pattern detection (authenticated)
-                        .pathMatchers("/api/patterns").authenticated()
-                        .pathMatchers("/api/patterns/**").authenticated()
+                        // Event Ingestion Service - cameras post events with their device key, not a user JWT;
+                        // event-ingestion authenticates the device itself (X-Device-Id / X-Device-Key)
+                        .pathMatchers(HttpMethod.POST, "/api/events").permitAll()
+                        // Event Ingestion Service - reading motion history and detected patterns
+                        .pathMatchers("/api/events/**").hasAnyRole("DOCTOR", "ADMIN")
+                        .pathMatchers("/api/patterns/**").hasAnyRole("DOCTOR", "ADMIN")
                         .pathMatchers("/api/behavior-logs/**").hasAnyRole("CAREGIVER", "DOCTOR", "ADMIN")
                         .pathMatchers("/api/alerts/**").hasAnyRole("PATIENT", "CAREGIVER", "DOCTOR", "ADMIN")
                         // Care Team Service - Admin/Doctor manage assignments, Caregivers participate

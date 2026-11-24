@@ -1,7 +1,8 @@
 # =============================================================================
 # AlzCare Platform - Docker Compose for Local Development
 # Infrastructure: Eureka, Config Server, RabbitMQ, Keycloak, MongoDB
-# Services: Identity, Gateway, Notification, Care Team, ML Prediction (+ optional 'full' profile)
+# Services: Identity, Gateway, Notification, Care Team, Event Ingestion (IoT), ML Prediction
+#           (+ optional 'full' profile)
 #
 # Network exposure: only the API gateway (8080) and Keycloak (8090) listen on all
 # interfaces. Every other port is bound to 127.0.0.1 for local debugging only, so
@@ -9,7 +10,7 @@
 #
 # Default:  docker compose up -d
 #   Starts only services whose source exists in this repo (core stack + care-team).
-# Full stack (requires extra folders: safety-alert-engine, event-ingestion,
+# Full stack (requires extra folders: safety-alert-engine,
 #   community-social-service):  docker compose --profile full up -d
 # =============================================================================
 
@@ -575,7 +576,6 @@ services:
 # PostgreSQL Database for Event Ingestion Service
 # -----------------------------------------------------------------------------
   postgres-event:
-    profiles: ["full"]
     container_name: postgres-event
     image: postgres:15-alpine
     environment:
@@ -608,7 +608,6 @@ services:
 # Event Ingestion Service
 # -----------------------------------------------------------------------------
   event-ingestion:
-    profiles: ["full"]
     container_name: event-ingestion
     build:
       context: ./event-ingestion
@@ -619,8 +618,11 @@ services:
       DB_PORT: 5432
       DB_NAME: postgres-event
       DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres} 
-      SERVICES_SAFETY_ALERT_ENGINE_URL: http://safety-alert-engine:8003
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-alzcare}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-alzcare123}
+      # Keycloak client "alzcare-event-ingestion" (client credentials, see the realm import)
+      EVENT_INGESTION_CLIENT_SECRET: ${EVENT_INGESTION_CLIENT_SECRET:-event-ingestion-secret-change-in-production}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: docker
       SPRING_CONFIG_IMPORT: "optional:configserver:http://${CONFIG_SERVER_USERNAME:-config}:${CONFIG_SERVER_PASSWORD:-config123}@config-server:8888"
@@ -636,6 +638,10 @@ services:
       - database-network
     depends_on:
       postgres-event:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
