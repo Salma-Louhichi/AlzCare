@@ -17,6 +17,7 @@ AlzCare/
 │   ├── identity-service/    # Users & profiles, Keycloak admin integration (8001)
 │   ├── notification-service/# Notifications, schedules, RabbitMQ consumer (8004)
 │   ├── care-team-service/   # Care-team assignments, handovers, checklists (8008)
+│   ├── ml-prediction-service/ # Python/FastAPI care-risk model (8094)
 │   └── keycloak-service/    # Keycloak realm configuration (8090)
 ├── frontend/                # Angular 18 standalone app + Tailwind CSS (4200)
 ├── docs/                    # Architecture documentation
@@ -42,6 +43,8 @@ AlzCare/
 ### Doctor Features
 - **Patient Cases Overview** – Dashboard for monitoring assigned patients
 - **Care Coordination** – Interface for managing patient care plans
+- **Autonomy Assessments** – Record hygiene / medication / mobility / feeding autonomy and follow the 1–10 score over time
+- **Care-Risk Estimate (ML)** – Probability that the next assessment shows a decline, with the three main factors explained ([model card](backend/ml-prediction-service/MODEL_CARD.md): demonstration model trained on synthetic data, not clinically validated)
 
 ### Admin Features
 - **System Dashboard** – Overview of platform metrics and activity

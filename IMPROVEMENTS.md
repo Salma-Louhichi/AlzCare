@@ -37,7 +37,8 @@ Legend — **P0**: security / correctness, fix first · **P1**: reliability & ma
 | BE-1 | P1 | Backend | `ddl-auto: update/create-drop` instead of migrations outside identity-service | ⏳ Planned |
 | BE-2 | P2 | Backend | Notification polling every 30 s instead of push | ⏳ Planned |
 | BE-3 | P2 | Backend | Email/SMS/push channels are mocks | ⏳ Planned |
-| BE-4 | P2 | Backend | Gateway/compose reference services that are not in the repo | ⏳ Planned |
+| BE-4 | P2 | Backend | Gateway/compose reference services that are not in the repo | ⏳ 3 left (ML done) |
+| ML-1 | P2 | ML | Care-risk model trained on synthetic data; needs clinical data + validation | ⏳ Planned |
 | OPS-1 | P2 | Backend | Correlation id stops at the gateway | ⏳ Planned |
 
 ---
@@ -292,6 +293,13 @@ current schemas, then switch to `validate`.
 - **BE-4 · Missing services.** The gateway rules and compose `full` profile reference
   safety-alert-engine, event-ingestion and community-social-service, but their sources aren't
   in this repo. Add them, or remove their routes so the documentation matches what runs.
+  (`ml-prediction`, the fourth placeholder route, is now implemented: see ML-1.)
+- **ML-1 · Care-risk model needs real data.** `ml-prediction-service` (Python/FastAPI, 37 tests,
+  CI job) serves an explainable logistic-regression model trained on documented **synthetic**
+  data (hold-out ROC-AUC 0.787 vs 0.774 for a gradient-boosting baseline). It verifies the JWT
+  itself and lets a doctor score only their own patients. Before any real use it needs a
+  labelled, consented clinical dataset, external validation, calibration and subgroup checks,
+  and drift monitoring (see its MODEL_CARD.md).
 - **OPS-1 · Observability.** The gateway creates `X-Correlation-ID`, and the shared log pattern
   prints `%X{correlationId}`, but no service puts the header into the MDC. Add a small servlet
   filter (or Micrometer Tracing) so one request can be followed across services.
