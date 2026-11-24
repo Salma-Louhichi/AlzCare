@@ -102,6 +102,8 @@ public class SecurityConfig {
                         // Community Social Service - Registrations (Patients register, others manage)
                         .pathMatchers(HttpMethod.GET, "/community/api/v1/registrations/**").authenticated()
                         .pathMatchers("/community/api/v1/registrations/**").hasAnyRole("PATIENT", "CAREGIVER", "DOCTOR", "ADMIN")
+                        // ML Prediction Service - care-risk estimates are clinical information
+                        .pathMatchers("/api/v1/ml/**").hasAnyRole("DOCTOR", "ADMIN")
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(reactiveJwtAuthenticationConverter())))

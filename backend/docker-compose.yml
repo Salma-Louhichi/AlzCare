@@ -1,7 +1,7 @@
 # =============================================================================
 # AlzCare Platform - Docker Compose for Local Development
 # Infrastructure: Eureka, Config Server, RabbitMQ, Keycloak, MongoDB
-# Services: Identity Service, Gateway Service, Safety Alert Engine, Notification Service
+# Services: Identity, Gateway, Notification, Care Team, ML Prediction (+ optional 'full' profile)
 #
 # Network exposure: only the API gateway (8080) and Keycloak (8090) listen on all
 # interfaces. Every other port is bound to 127.0.0.1 for local debugging only, so
@@ -699,6 +699,39 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# -----------------------------------------------------------------------------
+# ML Prediction Service (Python/FastAPI) - care-risk model, see its MODEL_CARD.md
+# The hostname must stay "ml-prediction": the gateway routes /api/v1/ml/** there.
+# -----------------------------------------------------------------------------
+  ml-prediction:
+    container_name: ml-prediction
+    build:
+      context: ./ml-prediction-service
+      dockerfile: Dockerfile
+    image: alzcare/ml-prediction:latest
+    environment:
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/alzcare/protocol/openid-connect/certs
+      # Keycloak is pinned to the public hostname (KC_HOSTNAME), so tokens carry this issuer
+      KEYCLOAK_ISSUER: http://localhost:8090/realms/alzcare
+      IDENTITY_SERVICE_URL: http://identity-service:8001
+      CARE_TEAM_SERVICE_URL: http://care-team-service:8008
+    ports:
+      - "127.0.0.1:8094:8094"
+    networks:
+      - backend-network
+    depends_on:
+      keycloak:
+        condition: service_healthy
     restart: unless-stopped
     deploy:
       resources:

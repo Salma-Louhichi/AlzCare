@@ -114,7 +114,7 @@ spring:
           filters:
             - StripPrefix=2
 
-        # ML Prediction Service (placeholder)
+        # ML Prediction Service (Python/FastAPI, care-risk model)
         - id: ml-prediction
           uri: http://ml-prediction:8094
           predicates:
@@ -236,6 +236,11 @@ spring:
             - StripPrefix=2
 
         # Keycloak - Local
+        - id: ml-prediction
+          uri: http://localhost:8094
+          predicates:
+            - Path=/api/v1/ml/**
+
         - id: keycloak
           uri: http://localhost:8090
           predicates:
