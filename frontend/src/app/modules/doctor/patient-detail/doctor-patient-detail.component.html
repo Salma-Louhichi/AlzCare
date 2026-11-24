@@ -113,6 +113,11 @@
       </div>
     </div>
 
+    <!-- Autonomy assessments + ML care-risk estimate -->
+    <app-care-risk-panel class="block mb-8"
+                         [patientUserId]="patientId"
+                         [patientProfileId]="identityProfileId"></app-care-risk-panel>
+
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Assigned Caregivers Section -->

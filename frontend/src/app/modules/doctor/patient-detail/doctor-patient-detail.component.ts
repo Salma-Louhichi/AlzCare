@@ -10,6 +10,7 @@ import { PatientService } from '../../../core/services/patient.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { NotificationBellComponent } from '../../../shared/components/notification-bell/notification-bell.component';
 import { RoleTheme } from '../../../shared/components/navbar.component';
+import { CareRiskPanelComponent } from './care-risk-panel/care-risk-panel.component';
 import {
   CaregiverAssignment,
   ChecklistItem,
@@ -25,12 +26,14 @@ import {
 @Component({
   selector: 'app-doctor-patient-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, NotificationBellComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, NotificationBellComponent, CareRiskPanelComponent],
   templateUrl: './doctor-patient-detail.component.html',
   styleUrls: ['./doctor-patient-detail.component.scss']
 })
 export class DoctorPatientDetailComponent implements OnInit {
   patientId!: string;
+  /** identity-service profile id (autonomy assessments are keyed by it) */
+  identityProfileId: string | null = null;
   patient: any = null;
   caregivers: CaregiverAssignment[] = [];
   /** Link invites not yet accepted (hidden before — caused “pending PRIMARY” errors with an empty list) */
@@ -140,6 +143,7 @@ export class DoctorPatientDetailComponent implements OnInit {
     forkJoin([profile$, identity$]).subscribe({
       next: ([profile, identity]) => {
         if (identity) {
+          this.identityProfileId = identity.id;
           this.patient = {
             ...this.patient,
             firstName: identity.firstName,
